@@ -1,0 +1,2 @@
+// Certificates feature placeholder
+export {};

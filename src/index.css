@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --color-bg-primary: #05070A;
+  --color-bg-secondary: #0B0F14;
+  --color-bg-elevated: #111722;
+
+  --color-text-primary: #F4F5F7;
+  --color-text-muted: #8B94A3;
+
+  --color-border-subtle: rgba(255, 255, 255, 0.10);
+
+  --color-accent-ai: #8DD3FF;
+  --color-accent-secondary: #B9A7FF;
+
+  --color-status-success: #7ED6A5;
+  --color-status-warning: #F4C56A;
+  --color-status-error: #FF8B8B;
+}
+
+:root {
+  --bg-primary: #05070A;
+  --bg-secondary: #0B0F14;
+  --bg-elevated: #111722;
+  --text-primary: #F4F5F7;
+  --text-muted: #8B94A3;
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --accent-ai: #8DD3FF;
+  --accent-secondary: #B9A7FF;
+  --status-success: #7ED6A5;
+  --status-warning: #F4C56A;
+  --status-error: #FF8B8B;
+}
+
+body {
+  background-color: #000000;
+  color: #F4F5F7;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Enforce Hand Pointer Cursor across all interactive controls */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer !important;
+}
+
+.font-serif, .font-display {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+/* Liquid Glass System */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
