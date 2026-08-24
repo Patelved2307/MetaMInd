@@ -87,7 +87,7 @@ export const DashboardPage: React.FC = () => {
         style={{ background: theme.glow }}
       />
 
-      {/* SECTION 1 — PRIMARY AI COMMAND CENTER HERO WITH ENLARGED 3D PERSONA STAGE */}
+      {/* SECTION 1 — PRIMARY AI COMMAND CENTER HERO WITH SEAMLESS 3D PERSONA DISPLAY */}
       <div
         className={`liquid-glass rounded-3xl p-8 sm:p-12 border relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-r ${theme.heroGradient}`}
         style={{ borderColor: theme.border }}
@@ -199,40 +199,36 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: BORDERLESS ENLARGED 3D CHARACTER HOLOGRAM STAGE */}
+          {/* Right Column: CLEAN BORDERLESS 3D CHARACTER DISPLAY (NO ORBIT LINES, SEAMLESS FADE) */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center relative pt-6 lg:pt-0">
             <div
               onClick={() => setIsAvatarModalOpen(true)}
               className="group relative flex flex-col items-center justify-center cursor-pointer transition-all duration-500 w-full max-w-sm"
             >
-              {/* Radial Backdrop Glow Aura */}
+              {/* Soft Radial Ambient Glow (Replaces Orbit Line) */}
               <div
-                className="absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full blur-[90px] opacity-70 transition-all duration-700 pointer-events-none"
+                className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full blur-[80px] opacity-60 transition-all duration-700 pointer-events-none"
                 style={{ backgroundColor: theme.primary }}
               />
 
-              {/* Rotating 3D Hologram Ring Base */}
+              {/* 3D Base Reflection Light Disk */}
               <div
-                className="absolute bottom-8 w-64 h-16 sm:w-80 sm:h-20 rounded-[100%] border-2 border-dashed animate-[spin_15s_linear_infinite] pointer-events-none opacity-80"
-                style={{ borderColor: theme.primary }}
-              />
-
-              {/* 3D Stage Base Glow Disk */}
-              <div
-                className="absolute bottom-6 w-56 h-10 sm:w-72 sm:h-12 rounded-[100%] blur-md pointer-events-none opacity-90 shadow-2xl"
+                className="absolute bottom-8 w-52 h-10 sm:w-64 sm:h-12 rounded-[100%] blur-lg pointer-events-none opacity-80 shadow-2xl"
                 style={{ backgroundColor: theme.primary }}
               />
 
-              {/* ENLARGED BORDERLESS 3D CHARACTER PERSONA */}
-              <img
-                src={avatarUrl}
-                alt="3D Character Persona"
-                className="relative z-10 w-64 h-80 sm:w-80 sm:h-96 object-contain pointer-events-none filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] group-hover:scale-110 transition-transform duration-700"
-              />
+              {/* ENLARGED 3D CHARACTER PERSONA WITH SMOOTH GRADIENT BOTTOM MASK */}
+              <div className="relative z-10 w-64 h-72 sm:w-80 sm:h-84 overflow-hidden flex items-end justify-center">
+                <img
+                  src={avatarUrl}
+                  alt="3D Character Persona"
+                  className="w-full h-full object-contain pointer-events-none filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-500 [mask-image:linear-gradient(to_bottom,black_70%,transparent_96%)]"
+                />
+              </div>
 
               {/* Floating Holographic Interactive Tag */}
               <div
-                className="relative z-20 -mt-6 px-4 py-2 rounded-2xl liquid-glass border shadow-2xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
+                className="relative z-20 -mt-2 px-4 py-2 rounded-2xl liquid-glass border shadow-2xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
                 style={{ borderColor: theme.border, backgroundColor: 'rgba(5, 7, 10, 0.85)' }}
               >
                 <Sparkles className="w-4 h-4 animate-spin-slow" style={{ color: theme.badgeText }} />
