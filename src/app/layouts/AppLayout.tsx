@@ -12,7 +12,7 @@ export const AppLayout: React.FC = () => {
   const theme = activePreset.theme;
 
   return (
-    <div className="min-h-screen bg-[#05070A] text-[#F4F5F7] flex flex-col lg:flex-row relative overflow-x-hidden selection:bg-white/20">
+    <div className="h-screen w-full bg-[#05070A] text-[#F4F5F7] flex flex-col lg:flex-row overflow-hidden relative selection:bg-white/20">
       {/* Global Dynamic Radial Ambient Sheen matching Selected Avatar Theme */}
       <div
         className="fixed top-0 right-0 w-[700px] h-[700px] rounded-full blur-[140px] pointer-events-none transition-all duration-700 opacity-40 z-0"
@@ -23,11 +23,11 @@ export const AppLayout: React.FC = () => {
         style={{ background: theme.glow }}
       />
 
-      {/* Sidebar Navigation */}
+      {/* Sticky Sidebar Menu (Fixed Position) */}
       <Sidebar />
 
-      {/* Main Page Area */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-y-auto relative z-10">
+      {/* Main Page Content Area (Independently Scrollable) */}
+      <main className="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto relative z-10">
         <Outlet />
       </main>
     </div>
