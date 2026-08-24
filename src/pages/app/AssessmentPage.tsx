@@ -93,10 +93,10 @@ export const AssessmentPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 relative selection:bg-white/20">
+    <div className="max-w-3xl mx-auto space-y-8 relative selection:bg-white/20 pb-12">
       {/* Background Sheen */}
       <div
-        className="fixed top-0 right-0 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none transition-all opacity-40 z-0"
+        className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none transition-all opacity-40 z-0"
         style={{ background: theme.glow }}
       />
 
@@ -104,7 +104,7 @@ export const AssessmentPage: React.FC = () => {
       <div className="space-y-4 relative z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant="accent" className="gap-1">
+            <Badge variant="accent" className="gap-1 shadow-sm">
               <Brain className="w-3.5 h-3.5" />
               Diagnostic Assessment
             </Badge>
@@ -112,7 +112,7 @@ export const AssessmentPage: React.FC = () => {
               Topic: {activeSession?.topic || 'SQL JOINs'}
             </span>
           </div>
-          <span className="text-xs font-mono font-medium text-white/70">
+          <span className="text-xs font-mono font-bold text-white/80">
             Question {currentIndex + 1} of {totalQuestions}
           </span>
         </div>
@@ -126,18 +126,18 @@ export const AssessmentPage: React.FC = () => {
 
       {/* QUESTION CONTAINER */}
       {currentQuestion ? (
-        <div className="liquid-glass rounded-3xl p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
+        <div className="funky-card rounded-[2.5rem] p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-white/5 text-white/60">
+              <span className="text-xs font-mono font-bold uppercase px-3 py-1 rounded-full bg-white/5 text-white/70">
                 Concept: {currentQuestion.conceptName}
               </span>
-              <span className="text-xs font-mono capitalize text-[#8DD3FF]">
+              <span className="text-xs font-mono font-bold capitalize text-[#8DD3FF]">
                 Difficulty: {currentQuestion.difficulty}
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-semibold text-white leading-relaxed">
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-relaxed">
               {currentQuestion.question}
             </h2>
           </div>
@@ -150,14 +150,14 @@ export const AssessmentPage: React.FC = () => {
 
               if (submittedAnalysis) {
                 if (option === currentQuestion.correctAnswer) {
-                  optionStyle = 'bg-[#7ED6A5]/15 border-[#7ED6A5] text-white font-medium';
+                  optionStyle = 'bg-[#7ED6A5]/20 border-[#7ED6A5] text-white font-bold shadow-lg';
                 } else if (isSelected && !submittedAnalysis.isCorrect) {
-                  optionStyle = 'bg-[#FF8B8B]/15 border-[#FF8B8B] text-white';
+                  optionStyle = 'bg-[#FF8B8B]/20 border-[#FF8B8B] text-white';
                 } else {
                   optionStyle = 'bg-[#05070A] border-white/5 text-white/40';
                 }
               } else if (isSelected) {
-                optionStyle = 'liquid-glass border-2 text-white font-medium shadow-lg';
+                optionStyle = 'liquid-glass border-2 text-white font-bold shadow-xl';
               }
 
               return (
@@ -169,13 +169,13 @@ export const AssessmentPage: React.FC = () => {
                   style={{
                     borderColor: isSelected && !submittedAnalysis ? theme.primary : undefined,
                   }}
-                  className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${optionStyle}`}
+                  className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer funky-button ${optionStyle}`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-mono text-white/60">
+                    <span className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-mono font-bold text-white/60">
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    <span className="text-sm">{option}</span>
+                    <span className="text-sm font-medium">{option}</span>
                   </div>
 
                   {submittedAnalysis && option === currentQuestion.correctAnswer && (
@@ -198,15 +198,15 @@ export const AssessmentPage: React.FC = () => {
                   : 'bg-[#F4C56A]/10 border-[#F4C56A]/30 text-[#F4C56A]'
               }`}
             >
-              <div className="flex items-center justify-between font-semibold text-sm">
+              <div className="flex items-center justify-between font-bold text-sm">
                 <span>{submittedAnalysis.isCorrect ? '✓ Correct Answer!' : '💡 Concept Insight'}</span>
                 <span className="font-mono text-[11px]">Confidence: {submittedAnalysis.confidence}</span>
               </div>
-              <p className="text-white/80 leading-relaxed font-sans">
+              <p className="text-white/85 leading-relaxed font-sans font-medium">
                 {currentQuestion.explanation}
               </p>
               {submittedAnalysis.misconception && (
-                <p className="text-[#FF8B8B] font-medium pt-1">
+                <p className="text-[#FF8B8B] font-bold pt-1">
                   Insight: {submittedAnalysis.misconception}
                 </p>
               )}
@@ -220,7 +220,7 @@ export const AssessmentPage: React.FC = () => {
                 variant="primary"
                 onClick={handleAnswerSubmit}
                 disabled={!selectedOption}
-                className="font-semibold cursor-pointer border-none"
+                className="font-bold cursor-pointer border-none funky-button"
                 style={{ backgroundColor: theme.primary, color: '#05070A' }}
                 rightIcon={<Check className="w-4 h-4" />}
               >
@@ -231,7 +231,7 @@ export const AssessmentPage: React.FC = () => {
                 variant="primary"
                 onClick={handleNextQuestion}
                 isLoading={loading}
-                className="font-semibold cursor-pointer border-none"
+                className="font-bold cursor-pointer border-none funky-button"
                 style={{ backgroundColor: theme.primary, color: '#05070A' }}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
@@ -241,7 +241,7 @@ export const AssessmentPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl liquid-glass border border-white/10 text-center space-y-4">
+        <div className="p-8 rounded-3xl funky-card border border-white/10 text-center space-y-4">
           <HelpCircle className="w-8 h-8 text-white/40 mx-auto" />
           <p className="text-sm font-medium text-white">Preparing diagnostic assessment...</p>
         </div>

@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Layers,
   ArrowDown,
-  BookOpen,
+  Network,
 } from 'lucide-react';
 
 export const LearningMapPage: React.FC = () => {
@@ -51,13 +51,13 @@ export const LearningMapPage: React.FC = () => {
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'MASTERED':
-        return <Badge variant="success" className="gap-1"><CheckCircle2 className="w-3 h-3" /> Mastered</Badge>;
+        return <Badge variant="success" className="gap-1 shadow-sm"><CheckCircle2 className="w-3 h-3" /> Mastered</Badge>;
       case 'IMPROVING':
-        return <Badge variant="warning" className="gap-1"><Sparkles className="w-3 h-3" /> Improving</Badge>;
+        return <Badge variant="warning" className="gap-1 shadow-sm"><Sparkles className="w-3 h-3" /> Improving</Badge>;
       case 'IN_PROGRESS':
-        return <Badge variant="accent" className="gap-1"><Play className="w-3 h-3" /> In Progress</Badge>;
+        return <Badge variant="accent" className="gap-1 shadow-sm"><Play className="w-3 h-3" /> In Progress</Badge>;
       case 'WEAK':
-        return <Badge variant="error" className="gap-1"><AlertCircle className="w-3 h-3" /> Soft Red (Weak)</Badge>;
+        return <Badge variant="error" className="gap-1 shadow-sm"><AlertCircle className="w-3 h-3" /> Soft Red (Weak)</Badge>;
       case 'LOCKED':
         return <Badge variant="glass" className="gap-1 text-white/40"><Lock className="w-3 h-3" /> Locked</Badge>;
       default:
@@ -66,10 +66,10 @@ export const LearningMapPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 relative selection:bg-white/20">
+    <div className="space-y-8 relative selection:bg-white/20 pb-12">
       {/* Background Sheen */}
       <div
-        className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none transition-all opacity-50 z-0"
+        className="fixed top-0 right-0 w-[700px] h-[700px] rounded-full blur-[150px] pointer-events-none transition-all duration-700 opacity-50 z-0"
         style={{ background: theme.glow }}
       />
 
@@ -77,7 +77,7 @@ export const LearningMapPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs uppercase tracking-widest font-mono font-semibold" style={{ color: theme.badgeText }}>
+            <span className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: theme.badgeText }}>
               YOUR LEARNING JOURNEY
             </span>
             <span className="text-xs text-white/40">•</span>
@@ -86,7 +86,7 @@ export const LearningMapPage: React.FC = () => {
           <h1 className="font-serif text-3xl sm:text-5xl text-white tracking-tight">
             {topicName}
           </h1>
-          <p className="text-xs sm:text-sm text-white/70 mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-white/75 mt-1 max-w-xl font-sans">
             {activeSession?.analysis?.description || 'Personalized concept graph mapping prerequisites to core topic mastery.'}
           </p>
         </div>
@@ -97,7 +97,7 @@ export const LearningMapPage: React.FC = () => {
             size="lg"
             onClick={handleStartCheck}
             isLoading={loading}
-            className="font-semibold cursor-pointer shadow-lg border-none hover:scale-105"
+            className="font-bold cursor-pointer shadow-xl border-none funky-button"
             style={{ backgroundColor: theme.primary, color: '#05070A' }}
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
@@ -107,15 +107,15 @@ export const LearningMapPage: React.FC = () => {
         </div>
       </div>
 
-      {/* BEFORE WE START BANNER */}
-      <div className="liquid-glass rounded-2xl p-6 border border-white/15 bg-gradient-to-r from-white/[0.03] via-white/[0.06] to-white/[0.03] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+      {/* BEFORE WE START FUNKY BANNER */}
+      <div className="funky-card rounded-3xl p-6 sm:p-8 border border-white/15 bg-gradient-to-r from-white/[0.03] via-white/[0.06] to-white/[0.03] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-xl border" style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}>
-            <Layers className="w-5 h-5" style={{ color: theme.badgeText }} />
+          <div className="p-3.5 rounded-2xl border" style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}>
+            <Layers className="w-6 h-6" style={{ color: theme.badgeText }} />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Before we start, let's understand what you already know.</h3>
-            <p className="text-xs text-white/60">We'll ask a few diagnostic questions to pinpoint your current mastery and prerequisite understanding.</p>
+            <h3 className="text-base font-bold text-white">Before we start, let's understand what you already know.</h3>
+            <p className="text-xs text-white/65">We'll ask a few diagnostic questions to pinpoint your current mastery and prerequisite understanding.</p>
           </div>
         </div>
 
@@ -124,20 +124,20 @@ export const LearningMapPage: React.FC = () => {
           size="sm"
           onClick={handleStartCheck}
           isLoading={loading}
-          className="shrink-0 text-xs liquid-glass text-white hover:bg-white/10 cursor-pointer"
+          className="shrink-0 text-xs liquid-glass text-white border-white/20 hover:bg-white/10 funky-button cursor-pointer"
         >
           Check My Understanding →
         </Button>
       </div>
 
       {/* VISUAL KNOWLEDGE MAP JOURNEY */}
-      <div className="liquid-glass rounded-3xl p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
+      <div className="funky-card rounded-[2.5rem] p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" style={{ color: theme.primary }} />
+          <div className="flex items-center gap-2.5">
+            <Network className="w-5 h-5" style={{ color: theme.primary }} />
             <h2 className="text-xl font-serif text-white">Visual Knowledge Map</h2>
           </div>
-          <span className="text-xs font-mono text-white/50">{concepts.length} Concept Nodes</span>
+          <span className="text-xs font-mono font-bold text-white/50">{concepts.length} Concept Nodes</span>
         </div>
 
         {/* Vertical Node Sequence Flow */}
@@ -145,19 +145,19 @@ export const LearningMapPage: React.FC = () => {
           {concepts.map((concept, index) => {
             return (
               <React.Fragment key={concept.name}>
-                <div className="liquid-glass rounded-2xl p-5 border border-white/15 hover:border-white/40 transition-all flex items-start justify-between gap-4 group hover:scale-[1.02]">
+                <div className="funky-card rounded-2xl p-5 border border-white/15 hover:border-white/40 transition-all flex items-start justify-between gap-4 group">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-white/40 font-bold">0{index + 1}.</span>
-                      <h3 className="text-base font-semibold text-white group-hover:text-[#8DD3FF] transition-colors">
+                      <h3 className="text-base font-bold text-white group-hover:text-[#8DD3FF] transition-colors">
                         {concept.name}
                       </h3>
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/5 text-white/50">
+                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-white/5 text-white/60">
                         {concept.type}
                       </span>
                     </div>
                     {concept.description && (
-                      <p className="text-xs text-white/60 pl-6 leading-relaxed">
+                      <p className="text-xs text-white/65 pl-6 leading-relaxed">
                         {concept.description}
                       </p>
                     )}
@@ -186,7 +186,7 @@ export const LearningMapPage: React.FC = () => {
           size="lg"
           onClick={handleStartCheck}
           isLoading={loading}
-          className="font-semibold cursor-pointer shadow-xl px-8 py-3.5 border-none hover:scale-105"
+          className="font-bold cursor-pointer shadow-2xl px-8 py-4 border-none funky-button"
           style={{ backgroundColor: theme.primary, color: '#05070A' }}
           rightIcon={<ArrowRight className="w-5 h-5" />}
         >
