@@ -17,11 +17,11 @@ import {
   Flame,
   Play,
   Trophy,
-  Zap,
   Award,
   FileCheck,
   Compass,
   UserCheck,
+  Search,
 } from 'lucide-react';
 
 const EXAMPLE_DOUBTS = [
@@ -80,253 +80,180 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 relative selection:bg-white/20">
+    <div className="space-y-12 relative selection:bg-white/20 pb-12">
       {/* Background Radial Glow */}
       <div
-        className="fixed top-0 right-0 w-[700px] h-[700px] rounded-full blur-[150px] pointer-events-none transition-all duration-700 opacity-60 z-0"
+        className="fixed top-0 right-0 w-[700px] h-[700px] rounded-full blur-[150px] pointer-events-none transition-all duration-700 opacity-50 z-0"
         style={{ background: theme.glow }}
       />
 
-      {/* SECTION 1 — PRIMARY AI COMMAND CENTER HERO WITH SEAMLESS 3D PERSONA DISPLAY */}
-      <div
-        className={`liquid-glass rounded-3xl p-8 sm:p-12 border relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-r ${theme.heroGradient}`}
-        style={{ borderColor: theme.border }}
-      >
-        {/* Floating Ambient Accent Particle */}
+      {/* SECTION 1 — TOP PRIORITY: PRIMARY AI COMMAND CENTER HERO */}
+      <section className="relative z-10">
         <div
-          className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full blur-3xl opacity-40 pointer-events-none"
-          style={{ backgroundColor: theme.primary }}
-        />
+          className={`liquid-glass rounded-3xl p-6 sm:p-10 lg:p-12 border relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-r ${theme.heroGradient}`}
+          style={{ borderColor: theme.border }}
+        >
+          {/* Floating Ambient Glow Accent */}
+          <div
+            className="absolute -bottom-12 -left-12 w-60 h-60 rounded-full blur-3xl opacity-35 pointer-events-none"
+            style={{ backgroundColor: theme.primary }}
+          />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-          {/* Left Column: Command Center Text & Input */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Header Tag with User Persona Badge & XP Level */}
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            {/* Left Column: Command Center Text & Input */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Persona Badge & XP Counter */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass border cursor-pointer hover:scale-105 transition-all shadow-sm"
+                  style={{ borderColor: theme.border, backgroundColor: theme.badgeBg }}
+                >
+                  <UserCheck className="w-4 h-4" style={{ color: theme.badgeText }} />
+                  <span className="text-xs font-semibold" style={{ color: theme.badgeText }}>
+                    {activePreset.name} • @{username}
+                  </span>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-white/80">
+                  <Trophy className="w-3.5 h-3.5 text-[#F4C56A]" />
+                  <span>Level 4 Scholar • 1,450 XP</span>
+                </div>
+              </div>
+
+              {/* Main Command Center Heading */}
+              <div className="space-y-2">
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-serif tracking-tight leading-tight">
+                  What would you like to understand today?
+                </h1>
+                <p className="text-sm sm:text-base text-white/70 font-sans leading-relaxed max-w-xl">
+                  Ask any doubt or topic. Our AI transforms your question into a personalized learning journey.
+                </p>
+              </div>
+
+              {/* Large Premium AI Input Bar */}
+              <form onSubmit={(e) => handleStartJourney(e)} className="pt-2">
+                <div
+                  className="liquid-glass rounded-2xl p-2 sm:p-2.5 flex flex-col sm:flex-row items-center gap-3 shadow-2xl border transition-all focus-within:border-2"
+                  style={{ borderColor: theme.primary }}
+                >
+                  <div className="flex items-center gap-2 pl-3 w-full sm:w-auto flex-1">
+                    <Search className="w-5 h-5 text-white/40 shrink-0" />
+                    <input
+                      type="text"
+                      value={queryInput}
+                      onChange={(e) => {
+                        setQueryInput(e.target.value);
+                        if (error) clearError();
+                      }}
+                      placeholder="Ask anything... e.g. 'I don't understand SQL JOINs'"
+                      className="w-full bg-transparent text-white placeholder:text-white/40 text-sm sm:text-base py-3 outline-none border-none"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    isLoading={loading}
+                    className="w-full sm:w-auto font-semibold shrink-0 cursor-pointer px-6 py-3.5 border-none transition-all hover:scale-105 shadow-xl"
+                    style={{ backgroundColor: theme.primary, color: '#05070A' }}
+                    rightIcon={<ArrowRight className="w-5 h-5" />}
+                  >
+                    Start Journey
+                  </Button>
+                </div>
+              </form>
+
+              {/* Error Notice */}
+              {error && (
+                <div className="p-3.5 rounded-xl bg-[#FF8B8B]/10 border border-[#FF8B8B]/30 text-xs text-[#FF8B8B] flex items-center justify-between">
+                  <span>{error}</span>
+                  <button onClick={clearError} className="text-xs underline font-medium cursor-pointer">Dismiss</button>
+                </div>
+              )}
+
+              {/* Dynamic AI Analysis Loading Overlay */}
+              {loading && (
+                <div className="p-4 rounded-xl liquid-glass border flex items-center justify-center gap-3 text-sm text-white" style={{ borderColor: theme.border }}>
+                  <Sparkles className="w-5 h-5 animate-spin" style={{ color: theme.primary }} />
+                  <span className="font-medium animate-pulse">{loadingMessage || 'Analyzing your topic...'}</span>
+                </div>
+              )}
+
+              {/* Popular Learning Shortcut Pills */}
+              <div className="pt-1">
+                <p className="text-[11px] text-white/50 uppercase tracking-widest font-semibold mb-2">
+                  Popular learning shortcuts:
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {EXAMPLE_DOUBTS.map((doubt) => (
+                    <button
+                      key={doubt}
+                      type="button"
+                      onClick={() => {
+                        setQueryInput(doubt);
+                        handleStartJourney(undefined, doubt);
+                      }}
+                      className="px-3 py-1.5 rounded-full liquid-glass text-xs text-white/80 hover:text-white border border-white/10 hover:border-white/30 transition-all cursor-pointer hover:scale-105"
+                    >
+                      "{doubt}"
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: ENLARGED 3D CHARACTER DISPLAY WITH SMOOTH FADE MASK */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center relative pt-4 lg:pt-0">
               <div
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full liquid-glass border cursor-pointer hover:scale-105 transition-all shadow-md"
-                style={{ borderColor: theme.border, backgroundColor: theme.badgeBg }}
+                className="group relative flex flex-col items-center justify-center cursor-pointer transition-all duration-500 w-full max-w-sm"
               >
-                <UserCheck className="w-4 h-4" style={{ color: theme.badgeText }} />
-                <span className="text-xs font-semibold" style={{ color: theme.badgeText }}>
-                  {activePreset.name} • @{username}
-                </span>
-              </div>
-
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-white/80">
-                <Trophy className="w-3.5 h-3.5 text-[#F4C56A]" />
-                <span>Level 4 Scholar • 1,450 XP</span>
-              </div>
-            </div>
-
-            {/* Main Command Center Heading */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-serif tracking-tight leading-tight">
-              What would you like to understand today?
-            </h1>
-
-            <p className="text-sm sm:text-base text-white/70 font-sans leading-relaxed max-w-2xl">
-              Ask a question, explore a topic, and our AI will build a personalized learning journey around you.
-            </p>
-
-            {/* Large Premium AI Input Area */}
-            <form onSubmit={(e) => handleStartJourney(e)} className="pt-1">
-              <div
-                className="liquid-glass rounded-2xl p-2.5 flex flex-col sm:flex-row items-center gap-3 shadow-2xl border transition-all focus-within:border-2"
-                style={{ borderColor: theme.primary }}
-              >
-                <input
-                  type="text"
-                  value={queryInput}
-                  onChange={(e) => {
-                    setQueryInput(e.target.value);
-                    if (error) clearError();
-                  }}
-                  placeholder="Ask anything you're struggling with... e.g. 'I don't understand SQL JOINs'"
-                  className="w-full bg-transparent text-white placeholder:text-white/40 text-sm sm:text-base px-4 py-3 outline-none border-none"
-                  disabled={loading}
+                {/* Ambient Glow Disk Behind Character */}
+                <div
+                  className="absolute w-60 h-60 sm:w-72 sm:h-72 rounded-full blur-[80px] opacity-60 transition-all duration-700 pointer-events-none"
+                  style={{ backgroundColor: theme.primary }}
                 />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  isLoading={loading}
-                  className="w-full sm:w-auto font-semibold shrink-0 cursor-pointer px-6 py-3.5 border-none transition-all hover:scale-105 shadow-xl"
-                  style={{ backgroundColor: theme.primary, color: '#05070A' }}
-                  rightIcon={<ArrowRight className="w-5 h-5" />}
+
+                <div
+                  className="absolute bottom-6 w-48 h-10 sm:w-56 sm:h-12 rounded-[100%] blur-lg pointer-events-none opacity-80 shadow-2xl"
+                  style={{ backgroundColor: theme.primary }}
+                />
+
+                {/* ENLARGED 3D PERSONA IMAGE */}
+                <div className="relative z-10 w-60 h-72 sm:w-72 sm:h-80 overflow-hidden flex items-end justify-center">
+                  <img
+                    src={avatarUrl}
+                    alt="3D Character Persona"
+                    className="w-full h-full object-contain pointer-events-none filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-500 [mask-image:linear-gradient(to_bottom,black_70%,transparent_96%)]"
+                  />
+                </div>
+
+                {/* Interactive Persona Pill */}
+                <div
+                  className="relative z-20 -mt-2 px-4 py-2 rounded-2xl liquid-glass border shadow-2xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
+                  style={{ borderColor: theme.border, backgroundColor: 'rgba(5, 7, 10, 0.85)' }}
                 >
-                  Start Learning Journey
-                </Button>
-              </div>
-            </form>
-
-            {/* Error Notice */}
-            {error && (
-              <div className="p-3.5 rounded-xl bg-[#FF8B8B]/10 border border-[#FF8B8B]/30 text-xs text-[#FF8B8B] flex items-center justify-between">
-                <span>{error}</span>
-                <button onClick={clearError} className="text-xs underline font-medium cursor-pointer">Dismiss</button>
-              </div>
-            )}
-
-            {/* Dynamic AI Analysis Loading Overlay */}
-            {loading && (
-              <div className="p-4 rounded-xl liquid-glass border flex items-center justify-center gap-3 text-sm text-white" style={{ borderColor: theme.border }}>
-                <Sparkles className="w-5 h-5 animate-spin" style={{ color: theme.primary }} />
-                <span className="font-medium animate-pulse">{loadingMessage || 'Analyzing your topic...'}</span>
-              </div>
-            )}
-
-            {/* Quick Doubt Shortcut Pills */}
-            <div className="pt-1">
-              <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-2.5">
-                Popular learning shortcuts:
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                {EXAMPLE_DOUBTS.map((doubt) => (
-                  <button
-                    key={doubt}
-                    type="button"
-                    onClick={() => {
-                      setQueryInput(doubt);
-                      handleStartJourney(undefined, doubt);
-                    }}
-                    className="px-3.5 py-1.5 rounded-full liquid-glass text-xs text-white/80 hover:text-white border border-white/10 hover:border-white/30 transition-all cursor-pointer hover:scale-105"
-                  >
-                    "{doubt}"
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: CLEAN BORDERLESS 3D CHARACTER DISPLAY (NO ORBIT LINES, SEAMLESS FADE) */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center relative pt-6 lg:pt-0">
-            <div
-              onClick={() => setIsAvatarModalOpen(true)}
-              className="group relative flex flex-col items-center justify-center cursor-pointer transition-all duration-500 w-full max-w-sm"
-            >
-              {/* Soft Radial Ambient Glow (Replaces Orbit Line) */}
-              <div
-                className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full blur-[80px] opacity-60 transition-all duration-700 pointer-events-none"
-                style={{ backgroundColor: theme.primary }}
-              />
-
-              {/* 3D Base Reflection Light Disk */}
-              <div
-                className="absolute bottom-8 w-52 h-10 sm:w-64 sm:h-12 rounded-[100%] blur-lg pointer-events-none opacity-80 shadow-2xl"
-                style={{ backgroundColor: theme.primary }}
-              />
-
-              {/* ENLARGED 3D CHARACTER PERSONA WITH SMOOTH GRADIENT BOTTOM MASK */}
-              <div className="relative z-10 w-64 h-72 sm:w-80 sm:h-84 overflow-hidden flex items-end justify-center">
-                <img
-                  src={avatarUrl}
-                  alt="3D Character Persona"
-                  className="w-full h-full object-contain pointer-events-none filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-500 [mask-image:linear-gradient(to_bottom,black_70%,transparent_96%)]"
-                />
-              </div>
-
-              {/* Floating Holographic Interactive Tag */}
-              <div
-                className="relative z-20 -mt-2 px-4 py-2 rounded-2xl liquid-glass border shadow-2xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
-                style={{ borderColor: theme.border, backgroundColor: 'rgba(5, 7, 10, 0.85)' }}
-              >
-                <Sparkles className="w-4 h-4 animate-spin-slow" style={{ color: theme.badgeText }} />
-                <span>{activePreset.name}</span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText }}>
-                  3D Persona
-                </span>
+                  <Sparkles className="w-4 h-4 animate-spin-slow" style={{ color: theme.badgeText }} />
+                  <span>{activePreset.name}</span>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText }}>
+                    3D Persona
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* GAMIFIED DAILY QUEST BANNER */}
-      <div className="liquid-glass rounded-2xl p-5 border border-white/10 bg-gradient-to-r from-white/[0.03] via-white/[0.06] to-white/[0.03] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-xl border" style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}>
-            <Zap className="w-5 h-5" style={{ color: theme.badgeText }} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold uppercase" style={{ color: theme.badgeText }}>Daily Learning Quest</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#F4C56A]/20 text-[#F4C56A] font-bold">+150 XP</span>
-            </div>
-            <p className="text-sm font-semibold text-white">Complete 1 Diagnostic Assessment & Practice Session today</p>
-          </div>
-        </div>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => handleStartJourney(undefined, "SQL JOINs")}
-          className="shrink-0 text-xs liquid-glass text-white border-white/20 hover:bg-white/10 cursor-pointer"
-        >
-          Start Daily Quest →
-        </Button>
-      </div>
-
-      {/* QUICK ACTION DOCK */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <button
-          type="button"
-          onClick={() => navigate('/app/exam')}
-          className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#7ED6A5]/15 border border-[#7ED6A5]/30 text-[#7ED6A5]">
-              <FileCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white group-hover:text-[#7ED6A5] transition-colors">Timed Exam (3 Lives)</p>
-              <p className="text-xs text-white/50">Score &ge; 80% to earn certificates</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate('/app/certificates')}
-          className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 text-[#8DD3FF]">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white group-hover:text-[#8DD3FF] transition-colors">My Certificates</p>
-              <p className="text-xs text-white/50">View & download verified PDFs</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate('/app/learning-map')}
-          className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#F4C56A]/15 border border-[#F4C56A]/30 text-[#F4C56A]">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white group-hover:text-[#F4C56A] transition-colors">Visual Concept Map</p>
-              <p className="text-xs text-white/50">Explore prerequisites & topic nodes</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
-        </button>
-      </div>
-
-      {/* SECTION 2 — CONTINUE LEARNING */}
-      <div className="space-y-4">
+      {/* SECTION 2 — HIGH PRIORITY: CONTINUE LEARNING */}
+      <section className="space-y-4 relative z-10">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-serif text-white">Continue Learning</h2>
-            <p className="text-xs text-white/60">Pick up your active adaptive learning journeys right where you left off</p>
+            <p className="text-xs text-white/60">Pick up your active adaptive learning journeys where you left off</p>
           </div>
         </div>
 
@@ -373,13 +300,70 @@ export const DashboardPage: React.FC = () => {
           <div className="p-8 rounded-2xl liquid-glass border border-white/10 text-center space-y-2">
             <BookOpen className="w-8 h-8 text-white/40 mx-auto" />
             <p className="text-sm font-medium text-white">No active learning sessions yet</p>
-            <p className="text-xs text-white/50">Enter a question or topic above to start your first adaptive learning loop!</p>
+            <p className="text-xs text-white/50">Enter a question or topic above to start your first adaptive learning journey!</p>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* SECTION 3 — YOUR LEARNING INSIGHTS */}
-      <div className="space-y-4">
+      {/* SECTION 3 — QUICK TOOLS & GAMIFICATION DOCK */}
+      <section className="space-y-4 relative z-10">
+        <h2 className="text-2xl font-serif text-white">Learning Tools & Exams</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <button
+            type="button"
+            onClick={() => navigate('/app/exam')}
+            className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#7ED6A5]/15 border border-[#7ED6A5]/30 text-[#7ED6A5]">
+                <FileCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-[#7ED6A5] transition-colors">Timed Exam (3 Lives)</p>
+                <p className="text-xs text-white/50">Score &ge; 80% to earn certificates</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/app/certificates')}
+            className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 text-[#8DD3FF]">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-[#8DD3FF] transition-colors">My Certificates</p>
+                <p className="text-xs text-white/50">View & download verified PDFs</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/app/learning-map')}
+            className="p-5 rounded-2xl liquid-glass border border-white/10 hover:border-white/30 transition-all text-left flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#F4C56A]/15 border border-[#F4C56A]/30 text-[#F4C56A]">
+                <Compass className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-[#F4C56A] transition-colors">Visual Concept Map</p>
+                <p className="text-xs text-white/50">Explore prerequisites & topic nodes</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 4 — LEARNING INSIGHTS & STATS */}
+      <section className="space-y-4 relative z-10">
         <h2 className="text-2xl font-serif text-white">Your Learning Insights</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="liquid-glass rounded-2xl p-5 border border-white/10 space-y-2">
@@ -418,11 +402,11 @@ export const DashboardPage: React.FC = () => {
             <p className="text-xs text-[#FF8B8B]">Streak Active 🔥</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SECTION 4 — RECOMMENDED NEXT */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-serif text-white">Recommended Next</h2>
+      {/* SECTION 5 — RECOMMENDED NEXT STEPS */}
+      <section className="space-y-4 relative z-10">
+        <h2 className="text-2xl font-serif text-white">Recommended Next Steps</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div
             onClick={() => handleStartJourney(undefined, "Continue improving LEFT JOIN")}
@@ -460,7 +444,7 @@ export const DashboardPage: React.FC = () => {
             <p className="text-xs text-white/60">Solidify database primary key to foreign key links.</p>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* AVATAR & THEME SELECTOR MODAL */}
       <AvatarSelectorModal
