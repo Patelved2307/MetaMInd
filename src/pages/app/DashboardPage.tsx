@@ -21,6 +21,7 @@ import {
   Award,
   FileCheck,
   Compass,
+  UserCheck,
 } from 'lucide-react';
 
 const EXAMPLE_DOUBTS = [
@@ -86,7 +87,7 @@ export const DashboardPage: React.FC = () => {
         style={{ background: theme.glow }}
       />
 
-      {/* SECTION 1 — PRIMARY AI COMMAND CENTER HERO WITH 3D PERSONA DISPLAY */}
+      {/* SECTION 1 — PRIMARY AI COMMAND CENTER HERO WITH ENLARGED 3D PERSONA STAGE */}
       <div
         className={`liquid-glass rounded-3xl p-8 sm:p-12 border relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-r ${theme.heroGradient}`}
         style={{ borderColor: theme.border }}
@@ -99,7 +100,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
           {/* Left Column: Command Center Text & Input */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-7 space-y-6">
             {/* Header Tag with User Persona Badge & XP Level */}
             <div className="flex flex-wrap items-center gap-3">
               <div
@@ -107,8 +108,7 @@ export const DashboardPage: React.FC = () => {
                 className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full liquid-glass border cursor-pointer hover:scale-105 transition-all shadow-md"
                 style={{ borderColor: theme.border, backgroundColor: theme.badgeBg }}
               >
-                <img src={avatarUrl} alt="Persona" className="w-5 h-5 rounded-full object-cover" />
-                <Sparkles className="w-3.5 h-3.5" style={{ color: theme.badgeText }} />
+                <UserCheck className="w-4 h-4" style={{ color: theme.badgeText }} />
                 <span className="text-xs font-semibold" style={{ color: theme.badgeText }}>
                   {activePreset.name} • @{username}
                 </span>
@@ -199,36 +199,47 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: 3D Character Avatar Spotlight Card */}
-          <div className="lg:col-span-4 flex flex-col items-center justify-center relative">
+          {/* Right Column: BORDERLESS ENLARGED 3D CHARACTER HOLOGRAM STAGE */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center relative pt-6 lg:pt-0">
             <div
               onClick={() => setIsAvatarModalOpen(true)}
-              className="group relative p-6 rounded-3xl liquid-glass border-2 shadow-2xl text-center space-y-4 cursor-pointer transition-all hover:scale-105 w-full max-w-xs"
-              style={{ borderColor: theme.primary, boxShadow: `0 0 35px ${theme.glow}` }}
+              className="group relative flex flex-col items-center justify-center cursor-pointer transition-all duration-500 w-full max-w-sm"
             >
-              <div className="relative mx-auto w-36 h-36 rounded-2xl overflow-hidden bg-[#05070A] border-2 shadow-inner" style={{ borderColor: theme.primary }}>
-                <img
-                  src={avatarUrl}
-                  alt="3D Character Avatar"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div
-                  className="absolute bottom-2 right-2 p-1.5 rounded-full text-[#05070A] shadow-md font-bold"
-                  style={{ backgroundColor: theme.primary }}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              {/* Radial Backdrop Glow Aura */}
+              <div
+                className="absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full blur-[90px] opacity-70 transition-all duration-700 pointer-events-none"
+                style={{ backgroundColor: theme.primary }}
+              />
 
-              <div className="space-y-1">
-                <h3 className="text-lg font-serif text-white font-bold">{activePreset.name}</h3>
-                <span
-                  className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold border"
-                  style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, borderColor: theme.border }}
-                >
-                  {theme.themeName}
+              {/* Rotating 3D Hologram Ring Base */}
+              <div
+                className="absolute bottom-8 w-64 h-16 sm:w-80 sm:h-20 rounded-[100%] border-2 border-dashed animate-[spin_15s_linear_infinite] pointer-events-none opacity-80"
+                style={{ borderColor: theme.primary }}
+              />
+
+              {/* 3D Stage Base Glow Disk */}
+              <div
+                className="absolute bottom-6 w-56 h-10 sm:w-72 sm:h-12 rounded-[100%] blur-md pointer-events-none opacity-90 shadow-2xl"
+                style={{ backgroundColor: theme.primary }}
+              />
+
+              {/* ENLARGED BORDERLESS 3D CHARACTER PERSONA */}
+              <img
+                src={avatarUrl}
+                alt="3D Character Persona"
+                className="relative z-10 w-64 h-80 sm:w-80 sm:h-96 object-contain pointer-events-none filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)] group-hover:scale-110 transition-transform duration-700"
+              />
+
+              {/* Floating Holographic Interactive Tag */}
+              <div
+                className="relative z-20 -mt-6 px-4 py-2 rounded-2xl liquid-glass border shadow-2xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
+                style={{ borderColor: theme.border, backgroundColor: 'rgba(5, 7, 10, 0.85)' }}
+              >
+                <Sparkles className="w-4 h-4 animate-spin-slow" style={{ color: theme.badgeText }} />
+                <span>{activePreset.name}</span>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText }}>
+                  3D Persona
                 </span>
-                <p className="text-[11px] text-white/50 pt-1">Click to customize 3D character avatar</p>
               </div>
             </div>
           </div>
