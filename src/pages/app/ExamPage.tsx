@@ -5,7 +5,6 @@ import { useAuth } from '@/features/auth';
 import { examService, type ExamDifficulty, type ExamQuestion } from '@/features/exam';
 import { getAvatarPresetByUrl, generateAvatarUrl } from '@/lib/avatarGenerator';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import {
   FileCheck,
@@ -19,6 +18,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const ExamPage: React.FC = () => {
   const { activeSession } = useLearning();
@@ -28,9 +28,9 @@ export const ExamPage: React.FC = () => {
   const avatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
   const activePreset = getAvatarPresetByUrl(avatarUrl);
   const theme = activePreset.theme;
-  const studentName = profile?.full_name || user?.user_metadata?.full_name || 'Learner';
+  const studentName = profile?.full_name || user?.user_metadata?.full_name || 'Vipin';
 
-  const topicName = activeSession?.topic || 'SQL JOINs';
+  const topicName = activeSession?.topic || 'SQL JOINs & Database Logic';
   const subjectName = activeSession?.subject || 'Database Management Systems';
 
   const [difficulty, setDifficulty] = useState<ExamDifficulty>('easy');
@@ -47,8 +47,9 @@ export const ExamPage: React.FC = () => {
   const [examFinished, setExamFinished] = useState(false);
   const [isPassed, setIsPassed] = useState(false);
   const [issuedCode, setIssuedCode] = useState<string | null>(null);
+  const [speedBonusBanner, setSpeedBonusBanner] = useState<string | null>(null);
 
-  // Difficulty time setup
+  // Difficulty setup
   const handleStartExam = (selectedDiff: ExamDifficulty) => {
     setDifficulty(selectedDiff);
     const qList = examService.getExamQuestions(topicName, selectedDiff);
@@ -64,10 +65,11 @@ export const ExamPage: React.FC = () => {
     setExamFinished(false);
     setIsPassed(false);
     setIssuedCode(null);
+    setSpeedBonusBanner(null);
     setExamStarted(true);
   };
 
-  // Countdown timer effect
+  // Timer Countdown Effect
   useEffect(() => {
     if (!examStarted || examFinished) return;
 
@@ -98,6 +100,14 @@ export const ExamPage: React.FC = () => {
     if (isCorrect) {
       newCorrect += 1;
       setCorrectCount(newCorrect);
+
+      // SPEED BONUS: +10 Seconds time refill & Heart refill!
+      setTimeLeft((prev) => prev + 10);
+      newLives = Math.min(3, lives + 1);
+      setLives(newLives);
+
+      setSpeedBonusBanner('⚡ Fast Correct Answer! +10s Time Bonus & ❤️ Heart Refilled!');
+      setTimeout(() => setSpeedBonusBanner(null), 2500);
     } else {
       newLives = Math.max(0, lives - 1);
       setLives(newLives);
@@ -110,7 +120,7 @@ export const ExamPage: React.FC = () => {
       } else {
         setCurrentIndex((prev) => prev + 1);
       }
-    }, 800);
+    }, 900);
   };
 
   const finishExam = (finalCorrect: number, finalLives: number) => {
@@ -119,7 +129,8 @@ export const ExamPage: React.FC = () => {
     const total = questions.length || 5;
     const scorePercent = Math.round((finalCorrect / total) * 100);
 
-    const passed = finalLives > 0 && scorePercent >= 80;
+    // PASSING CRITERIA: SCORE >= 60%
+    const passed = finalLives > 0 && scorePercent >= 60;
     setIsPassed(passed);
 
     if (passed) {
@@ -147,24 +158,23 @@ export const ExamPage: React.FC = () => {
   const currentQuestion = questions[currentIndex];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 relative selection:bg-white/20">
-      {/* Background Sheen */}
+    <div className="max-w-4xl mx-auto space-y-8 relative selection:bg-blue-100 text-slate-800">
+      {/* Light Radial Ambient Sheen */}
       <div
-        className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none transition-all opacity-40 z-0"
+        className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none opacity-20 z-0"
         style={{ background: theme.glow }}
       />
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10 relative z-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="accent" className="gap-1">
-              <FileCheck className="w-3.5 h-3.5" />
-              Verified Certificate Exam
-            </Badge>
-            <span className="text-xs text-white/50 font-mono">{subjectName}</span>
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold font-mono border border-blue-200 flex items-center gap-1.5">
+              <FileCheck className="w-3.5 h-3.5" /> Verified Certificate Exam
+            </span>
+            <span className="text-xs text-slate-500 font-mono">{subjectName}</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl text-white tracking-tight">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
             Official Exam: {topicName}
           </h1>
         </div>
@@ -173,8 +183,8 @@ export const ExamPage: React.FC = () => {
           variant="secondary"
           size="sm"
           onClick={() => navigate('/app/certificates')}
-          className="text-xs liquid-glass text-white border-white/20 shrink-0 cursor-pointer"
-          leftIcon={<ShieldCheck className="w-4 h-4 text-[#7ED6A5]" />}
+          className="text-xs bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shrink-0 cursor-pointer shadow-sm"
+          leftIcon={<ShieldCheck className="w-4 h-4 text-emerald-600" />}
         >
           View My Certificates
         </Button>
@@ -182,41 +192,44 @@ export const ExamPage: React.FC = () => {
 
       {!examStarted ? (
         /* STEP 1: EXAM SETUP & DIFFICULTY SELECTION */
-        <div className="liquid-glass rounded-3xl p-6 sm:p-10 border border-white/10 space-y-8 relative z-10">
+        <div className="rounded-3xl p-6 sm:p-10 bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-md space-y-8 relative z-10">
           <div className="space-y-3 text-center max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto shadow-xl">
-              <FileCheck className="w-8 h-8" style={{ color: theme.primary }} />
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-sm text-white"
+              style={{ backgroundColor: theme.primary }}
+            >
+              <FileCheck className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-serif text-white">Select Exam Difficulty</h2>
-            <p className="text-xs sm:text-sm text-white/70">
-              Test your topic mastery under timed conditions. Score <span className="text-[#7ED6A5] font-bold">80% or higher</span> to earn your verified certificate!
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900">Select Exam Difficulty</h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Test your knowledge under gamified timed conditions. Score <span className="text-emerald-600 font-bold">60% or higher</span> to earn your verified certificate with a unique ID!
             </p>
           </div>
 
           {/* RULES BANNER */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[#05070A] border border-white/10 text-center space-y-1">
-              <div className="flex items-center justify-center gap-1 text-[#FF8B8B] font-bold text-sm">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-center space-y-1">
+              <div className="flex items-center justify-center gap-1 text-rose-600 font-bold text-sm">
                 <Heart className="w-4 h-4 fill-current" />
-                <span>3 Heart Lives</span>
+                <span>3 Heart Lives ❤️</span>
               </div>
-              <p className="text-[11px] text-white/60">1 mistake loses a life! 0 lives = Fail.</p>
+              <p className="text-[11px] text-rose-700">Mistakes reduce 1 life! Correct answers refill hearts.</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#05070A] border border-white/10 text-center space-y-1">
-              <div className="flex items-center justify-center gap-1 text-[#8DD3FF] font-bold text-sm">
+            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-center space-y-1">
+              <div className="flex items-center justify-center gap-1 text-blue-600 font-bold text-sm">
                 <Clock className="w-4 h-4" />
-                <span>Countdown Timer</span>
+                <span>Speed +10s Refill</span>
               </div>
-              <p className="text-[11px] text-white/60">5m (Easy) • 10m (Med) • 15m (Hard)</p>
+              <p className="text-[11px] text-blue-700">Fast correct answers add +10s to countdown timer!</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#05070A] border border-white/10 text-center space-y-1">
-              <div className="flex items-center justify-center gap-1 text-[#7ED6A5] font-bold text-sm">
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
+              <div className="flex items-center justify-center gap-1 text-emerald-600 font-bold text-sm">
                 <Trophy className="w-4 h-4" />
-                <span>&ge; 80% To Pass</span>
+                <span>&ge; 60% To Pass</span>
               </div>
-              <p className="text-[11px] text-white/60">Earn verified certificate on pass.</p>
+              <p className="text-[11px] text-emerald-700">Generates unique ID certificate on pass.</p>
             </div>
           </div>
 
@@ -225,51 +238,66 @@ export const ExamPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleStartExam('easy')}
-              className="p-5 rounded-2xl border border-[#7ED6A5]/30 bg-[#7ED6A5]/10 hover:border-[#7ED6A5] transition-all text-left space-y-2 cursor-pointer group"
+              className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[#7ED6A5]">EASY</span>
-                <Zap className="w-4 h-4 text-[#7ED6A5]" />
+                <span className="text-sm font-bold text-emerald-700">EASY</span>
+                <Zap className="w-4 h-4 text-emerald-600" />
               </div>
-              <p className="text-xs text-white/80 font-medium">5 Minutes • 5 Questions</p>
-              <p className="text-[11px] text-white/60">Fundamental concepts & syntax checks.</p>
+              <p className="text-xs text-slate-800 font-medium">5 Minutes • 5 Questions</p>
+              <p className="text-[11px] text-slate-500">Fundamental concepts & syntax checks.</p>
             </button>
 
             <button
               type="button"
               onClick={() => handleStartExam('medium')}
-              className="p-5 rounded-2xl border border-[#F4C56A]/30 bg-[#F4C56A]/10 hover:border-[#F4C56A] transition-all text-left space-y-2 cursor-pointer group"
+              className="p-5 rounded-2xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[#F4C56A]">MEDIUM</span>
-                <Sparkles className="w-4 h-4 text-[#F4C56A]" />
+                <span className="text-sm font-bold text-amber-700">MEDIUM</span>
+                <Sparkles className="w-4 h-4 text-amber-600" />
               </div>
-              <p className="text-xs text-white/80 font-medium">10 Minutes • 5 Questions</p>
-              <p className="text-[11px] text-white/60">Relational logic & null handling scenarios.</p>
+              <p className="text-xs text-slate-800 font-medium">10 Minutes • 5 Questions</p>
+              <p className="text-[11px] text-slate-500">Relational logic & null handling scenarios.</p>
             </button>
 
             <button
               type="button"
               onClick={() => handleStartExam('hard')}
-              className="p-5 rounded-2xl border border-[#FF8B8B]/30 bg-[#FF8B8B]/10 hover:border-[#FF8B8B] transition-all text-left space-y-2 cursor-pointer group"
+              className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[#FF8B8B]">HARD</span>
-                <Trophy className="w-4 h-4 text-[#FF8B8B]" />
+                <span className="text-sm font-bold text-rose-700">HARD</span>
+                <Trophy className="w-4 h-4 text-rose-600" />
               </div>
-              <p className="text-xs text-white/80 font-medium">15 Minutes • 5 Questions</p>
-              <p className="text-[11px] text-white/60">Cartesian products, anti-joins & indexing optimization.</p>
+              <p className="text-xs text-slate-800 font-medium">15 Minutes • 5 Questions</p>
+              <p className="text-[11px] text-slate-500">Cartesian products & query optimization.</p>
             </button>
           </div>
         </div>
       ) : !examFinished ? (
         /* STEP 2: LIVE TIMED EXAM INTERFACE */
-        <div className="liquid-glass rounded-3xl p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
+        <div className="rounded-3xl p-6 sm:p-10 bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-md space-y-6 relative z-10">
+          {/* SPEED BONUS POPUP NOTIFICATION */}
+          <AnimatePresence>
+            {speedBonusBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="p-3 rounded-2xl bg-emerald-500 text-white font-bold text-xs text-center shadow-lg flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4 animate-bounce" />
+                <span>{speedBonusBanner}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* LIVE TIMER & HEARTS HEADER */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#05070A] border border-white/10">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
             {/* Countdown Timer */}
-            <div className="flex items-center gap-2 text-sm font-mono font-bold text-white">
-              <Clock className="w-4 h-4 text-[#8DD3FF] animate-pulse" />
+            <div className="flex items-center gap-2 text-sm font-mono font-bold text-slate-900">
+              <Clock className="w-4 h-4 text-blue-600 animate-pulse" />
               <span>Time Left: {formatTime(timeLeft)}</span>
             </div>
 
@@ -280,15 +308,15 @@ export const ExamPage: React.FC = () => {
                   key={heartNum}
                   className={`w-5 h-5 transition-all ${
                     heartNum <= lives
-                      ? 'text-[#FF8B8B] fill-[#FF8B8B] scale-110 drop-shadow-[0_0_8px_rgba(255,139,139,0.5)]'
-                      : 'text-white/20'
+                      ? 'text-rose-500 fill-rose-500 scale-110'
+                      : 'text-slate-300'
                   }`}
                 />
               ))}
             </div>
 
-            {/* Progress counter */}
-            <span className="text-xs font-mono text-white/60">
+            {/* Progress Counter */}
+            <span className="text-xs font-mono text-slate-500">
               Q{currentIndex + 1} of {questions.length}
             </span>
           </div>
@@ -298,7 +326,7 @@ export const ExamPage: React.FC = () => {
           {/* QUESTION CARD */}
           {currentQuestion && (
             <div className="space-y-6 pt-2">
-              <h2 className="text-xl sm:text-2xl font-semibold text-white leading-relaxed">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-relaxed font-display">
                 {currentQuestion.question}
               </h2>
 
@@ -307,12 +335,12 @@ export const ExamPage: React.FC = () => {
                   const isSelected = userAnswers[currentQuestion.id] === option;
                   const isCorrect = option === currentQuestion.correctAnswer;
 
-                  let style = 'bg-[#05070A] border-white/10 text-white/80 hover:border-white/25 hover:bg-white/[0.03]';
+                  let style = 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50';
 
                   if (userAnswers[currentQuestion.id]) {
-                    if (isCorrect) style = 'bg-[#7ED6A5]/20 border-[#7ED6A5] text-white font-semibold';
-                    else if (isSelected) style = 'bg-[#FF8B8B]/20 border-[#FF8B8B] text-white';
-                    else style = 'bg-[#05070A] border-white/5 text-white/40';
+                    if (isCorrect) style = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold';
+                    else if (isSelected) style = 'bg-rose-50 border-rose-500 text-rose-950';
+                    else style = 'bg-slate-50 border-slate-200 text-slate-400';
                   }
 
                   return (
@@ -321,17 +349,17 @@ export const ExamPage: React.FC = () => {
                       type="button"
                       disabled={!!userAnswers[currentQuestion.id]}
                       onClick={() => handleSelectAnswer(currentQuestion, option)}
-                      className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${style}`}
+                      className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer shadow-sm ${style}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-mono text-white/60">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-mono font-bold text-slate-600">
                           {String.fromCharCode(65 + idx)}
                         </span>
                         <span className="text-sm">{option}</span>
                       </div>
 
-                      {userAnswers[currentQuestion.id] && isCorrect && <CheckCircle2 className="w-5 h-5 text-[#7ED6A5]" />}
-                      {userAnswers[currentQuestion.id] && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-[#FF8B8B]" />}
+                      {userAnswers[currentQuestion.id] && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                      {userAnswers[currentQuestion.id] && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-rose-600" />}
                     </button>
                   );
                 })}
@@ -341,35 +369,35 @@ export const ExamPage: React.FC = () => {
         </div>
       ) : (
         /* STEP 3: EXAM RESULTS SCREEN */
-        <div className="liquid-glass rounded-3xl p-8 sm:p-12 border border-white/15 space-y-8 relative z-10 text-center">
+        <div className="rounded-3xl p-8 sm:p-12 bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-md space-y-8 relative z-10 text-center">
           {isPassed ? (
-            /* PASSED CELEBRATION (Score >= 80%) */
+            /* PASSED CELEBRATION (Score >= 60%) */
             <div className="space-y-6 max-w-xl mx-auto">
-              <div className="w-20 h-20 rounded-3xl bg-[#7ED6A5]/20 border-2 border-[#7ED6A5] flex items-center justify-center mx-auto shadow-2xl animate-bounce">
-                <Trophy className="w-10 h-10 text-[#7ED6A5]" />
+              <div className="w-20 h-20 rounded-3xl bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center mx-auto shadow-md animate-bounce">
+                <Trophy className="w-10 h-10 text-emerald-600" />
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#7ED6A5]">
-                  EXAM PASSED (80%+ ACHIEVED)
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-600">
+                  EXAM PASSED (PASSED &ge; 60%)
                 </span>
-                <h2 className="text-3xl sm:text-5xl font-serif text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
                   Congratulations, {studentName}!
                 </h2>
-                <p className="text-sm text-white/80 leading-relaxed font-sans">
-                  You scored <span className="text-[#7ED6A5] font-bold">{Math.round((correctCount / questions.length) * 100)}%</span> on the {difficulty.toUpperCase()} exam! Your verified certificate has been issued.
+                <p className="text-sm text-slate-600 leading-relaxed font-sans">
+                  You scored <span className="text-emerald-600 font-bold">{Math.round((correctCount / questions.length) * 100)}%</span> on the {difficulty.toUpperCase()} exam! Your verified certificate has been issued.
                 </p>
               </div>
 
               {/* CERTIFICATE VERIFICATION CARD */}
-              <div className="p-6 rounded-2xl bg-[#05070A] border border-[#7ED6A5]/30 space-y-3 text-left">
+              <div className="p-6 rounded-2xl bg-slate-50 border border-emerald-200 space-y-3 text-left">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-white/60">Verification Code:</span>
-                  <span className="text-[#7ED6A5] font-bold">{issuedCode || 'ATH-884920'}</span>
+                  <span className="text-slate-500">Unique Verification ID:</span>
+                  <span className="text-emerald-700 font-bold">{issuedCode || 'CERT-2026-META-884920'}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-white/60">Certified Topic:</span>
-                  <span className="text-white font-semibold">{topicName}</span>
+                  <span className="text-slate-500">Certified Topic:</span>
+                  <span className="text-slate-900 font-semibold">{topicName}</span>
                 </div>
               </div>
 
@@ -378,8 +406,8 @@ export const ExamPage: React.FC = () => {
                   variant="primary"
                   size="lg"
                   onClick={() => navigate('/app/certificates')}
-                  className="w-full sm:w-auto font-semibold cursor-pointer shadow-xl px-8 py-3.5 border-none hover:scale-105"
-                  style={{ backgroundColor: theme.primary, color: '#05070A' }}
+                  className="w-full sm:w-auto font-bold cursor-pointer shadow-md px-8 py-3.5 border-none hover:scale-105"
+                  style={{ backgroundColor: theme.primary, color: '#FFFFFF' }}
                   rightIcon={<ShieldCheck className="w-5 h-5" />}
                 >
                   View & Download Certificate
@@ -387,23 +415,23 @@ export const ExamPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* FAILED / LIVES LOST SCREEN (< 80% or 0 Lives) */
+            /* FAILED SCREEN (< 60% or 0 Lives) */
             <div className="space-y-6 max-w-xl mx-auto">
-              <div className="w-20 h-20 rounded-3xl bg-[#FF8B8B]/20 border-2 border-[#FF8B8B] flex items-center justify-center mx-auto shadow-2xl">
-                <XCircle className="w-10 h-10 text-[#FF8B8B]" />
+              <div className="w-20 h-20 rounded-3xl bg-rose-100 border-2 border-rose-500 flex items-center justify-center mx-auto shadow-md">
+                <XCircle className="w-10 h-10 text-rose-600" />
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF8B8B]">
-                  NO CERTIFICATE ISSUED (SCORE &lt; 80%)
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-rose-600">
+                  NO CERTIFICATE ISSUED (SCORE &lt; 60%)
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-serif text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
                   Keep Practicing, {studentName}!
                 </h2>
-                <p className="text-sm text-white/80 leading-relaxed font-sans">
+                <p className="text-sm text-slate-600 leading-relaxed font-sans">
                   {lives <= 0
                     ? 'You ran out of Heart Lives (3 mistakes).'
-                    : `You scored ${Math.round((correctCount / questions.length) * 100)}%. A minimum of 80% is required to earn a certificate.`}
+                    : `You scored ${Math.round((correctCount / questions.length) * 100)}%. A minimum score of 60% is required to earn a verified certificate.`}
                 </p>
               </div>
 
@@ -412,8 +440,8 @@ export const ExamPage: React.FC = () => {
                   variant="secondary"
                   size="lg"
                   onClick={() => handleStartExam(difficulty)}
-                  className="font-semibold cursor-pointer liquid-glass text-white border-white/20 hover:bg-white/10"
-                  leftIcon={<RotateCcw className="w-5 h-5 text-[#8DD3FF]" />}
+                  className="font-bold cursor-pointer bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200"
+                  leftIcon={<RotateCcw className="w-5 h-5 text-blue-600" />}
                 >
                   Retry Exam Now
                 </Button>

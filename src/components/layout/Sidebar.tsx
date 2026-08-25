@@ -12,29 +12,31 @@ import {
   Award,
   ShieldCheck,
   User,
-  Sparkles,
+  Users,
   Menu,
   X,
   LogOut,
 } from 'lucide-react';
-import { generateAvatarUrl, getAvatarPresetByUrl } from '@/lib/avatarGenerator';
+import { generateAvatarUrl, getAvatarPresetByUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 
 interface NavItem {
   name: string;
   path: string;
   icon: React.ElementType;
+  badge?: string;
 }
 
 const navItems: NavItem[] = [
   { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
-  { name: 'Learn', path: '/app/learn', icon: BookOpen },
+  { name: 'Learn & AI Hub', path: '/app/learn', icon: BookOpen },
+  { name: 'Group Study Room', path: '/app/study-room', icon: Users, badge: 'Live' },
   { name: 'Learning Map', path: '/app/learning-map', icon: Network },
-  { name: 'Practice', path: '/app/practice', icon: Code },
-  { name: 'Exam', path: '/app/exam', icon: FileCheck },
+  { name: 'Practice & Puzzles', path: '/app/practice', icon: Code },
+  { name: 'Timed Exam', path: '/app/exam', icon: FileCheck },
   { name: 'Library', path: '/app/library', icon: Library },
   { name: 'Achievements', path: '/app/achievements', icon: Award },
   { name: 'Certificates', path: '/app/certificates', icon: ShieldCheck },
-  { name: 'Profile', path: '/app/profile', icon: User },
+  { name: 'Profile & Theme', path: '/app/profile', icon: User },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -53,61 +55,47 @@ export const Sidebar: React.FC = () => {
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || 'Learner';
   const displayUsername = profile?.username ? `@${profile.username}` : user?.email || '';
-  const avatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'default');
+  const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'default');
+  const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
   const activePreset = getAvatarPresetByUrl(avatarUrl);
   const theme = activePreset.theme;
 
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0B0F14] border-b border-white/10 sticky top-0 z-40">
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/90 border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-lg border flex items-center justify-center"
-            style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}
-          >
-            <Sparkles className="w-4 h-4" style={{ color: theme.badgeText }} />
-          </div>
-          <span className="font-display text-xl text-[#F4F5F7]">Aether</span>
+          <img src="/assets/brand/metamind_logo.png" alt="MetaMind" className="h-8 w-auto object-contain" />
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-[#8B94A3] hover:text-[#F4F5F7] focus:outline-none"
+          className="p-2 text-slate-600 hover:text-slate-900 focus:outline-none"
         >
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Overlay for mobile drawer */}
+      {/* Backdrop for Mobile */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="lg:hidden fixed inset-0 bg-[#05070A]/80 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40"
         />
       )}
 
-      {/* Sidebar Panel */}
+      {/* Desktop Sidebar Container */}
       <aside
-        className={cn(
-          'fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-[#0B0F14] border-r border-white/10 flex flex-col justify-between transition-transform duration-300 ease-in-out',
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white/95 backdrop-blur-md border-r border-slate-200/90 transform transition-transform duration-200 ease-in-out flex flex-col justify-between shadow-sm ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        )}
+        }`}
       >
         <div className="p-5 overflow-y-auto">
           {/* Brand Header */}
-          <div className="flex items-center gap-3 pb-6 border-b border-white/10">
-            <div
-              className="w-9 h-9 rounded-xl border flex items-center justify-center shadow-sm"
-              style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}
-            >
-              <Sparkles className="w-5 h-5" style={{ color: theme.badgeText }} />
-            </div>
-            <div>
-              <h2 className="font-display text-2xl font-normal text-[#F4F5F7] tracking-tight">Aether</h2>
-              <p className="text-[10px] uppercase tracking-widest font-medium" style={{ color: theme.badgeText }}>
-                {theme.themeName}
-              </p>
-            </div>
+          <div className="flex flex-col gap-1 pb-5 border-b border-slate-200/80">
+            <img src="/assets/brand/metamind_logo.png" alt="MetaMind Logo" className="h-10 w-auto object-contain object-left" />
+            <p className="text-[10px] font-mono font-bold tracking-wider pl-0.5" style={{ color: theme.primary }}>
+              {theme.themeName}
+            </p>
           </div>
 
           {/* Navigation Links */}
@@ -123,20 +111,27 @@ export const Sidebar: React.FC = () => {
                     isActive
                       ? {
                           backgroundColor: theme.badgeBg,
-                          color: theme.badgeText,
+                          color: theme.primary,
                           borderColor: theme.border,
                         }
                       : {}
                   }
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border border-transparent',
-                      !isActive && 'text-[#8B94A3] hover:text-[#F4F5F7] hover:bg-white/[0.03]'
+                      'flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 border border-transparent',
+                      !isActive && 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                     )
                   }
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.name}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-mono font-bold">
+                      {item.badge}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}
@@ -144,23 +139,23 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Sidebar Footer with User Avatar, Profile link & Logout */}
-        <div className="p-4 border-t border-white/10 bg-[#05070A]/50 space-y-2">
+        <div className="p-4 border-t border-slate-200/80 bg-slate-50/80 space-y-2">
           <NavLink
             to="/app/profile"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-white/5 transition-colors group"
+            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-200/60 transition-colors group"
           >
             <img
               src={avatarUrl}
               alt="Avatar"
-              className="w-9 h-9 rounded-xl bg-[#111722] border-2 object-cover transition-all"
+              className="w-9 h-9 rounded-xl bg-white border-2 object-cover shadow-sm transition-transform group-hover:scale-105"
               style={{ borderColor: theme.primary }}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-[#F4F5F7] truncate group-hover:text-white">
+              <p className="text-xs font-bold text-slate-900 truncate">
                 {displayName}
               </p>
-              <p className="text-[10px] truncate font-mono" style={{ color: theme.badgeText }}>
+              <p className="text-[10px] truncate font-mono text-slate-500">
                 {displayUsername}
               </p>
             </div>
@@ -168,7 +163,7 @@ export const Sidebar: React.FC = () => {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#FF8B8B] bg-[#FF8B8B]/10 hover:bg-[#FF8B8B]/20 border border-[#FF8B8B]/20 transition-all duration-150"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all duration-150 cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Log Out</span>

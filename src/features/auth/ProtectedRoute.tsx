@@ -21,7 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           <div className="w-9 h-9 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-[#8DD3FF]" />
           </div>
-          <span className="font-display text-2xl text-[#F4F5F7]">Aether</span>
+          <span className="font-display text-2xl text-[#F4F5F7]">MetaMind</span>
         </div>
         <LoadingState message="Verifying secure authentication..." size="lg" />
       </div>

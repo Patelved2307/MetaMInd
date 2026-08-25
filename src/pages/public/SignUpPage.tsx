@@ -90,7 +90,7 @@ export const SignUpPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/app/dashboard');
+      navigate('/onboarding', { replace: true });
     } catch (err: any) {
       setErrors({ auth: err.message || 'Failed to create account. Please try again.' });
     } finally {
@@ -129,10 +129,7 @@ export const SignUpPage: React.FC = () => {
         {/* Top Bar with Back Button & Brand Logo */}
         <div className="relative z-10 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 flex items-center justify-center liquid-glass group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 text-[#8DD3FF]" />
-            </div>
-            <span className="font-display text-2xl text-white font-normal tracking-tight">Aether Learn</span>
+            <img src="/assets/brand/metamind_logo_white.png" alt="MetaMind" className="h-10 w-auto object-contain" />
           </Link>
 
           <Link
@@ -156,7 +153,7 @@ export const SignUpPage: React.FC = () => {
           </h1>
 
           <p className="text-sm text-white/70 leading-relaxed font-sans">
-            Don't just get an answer. Understand what you need to learn next. Join Aether to diagnose prerequisite knowledge gaps adaptively.
+            Don't just get an answer. Understand what you need to learn next. Join MetaMind to diagnose prerequisite knowledge gaps adaptively.
           </p>
         </div>
 

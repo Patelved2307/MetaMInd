@@ -48,27 +48,27 @@ export const AnalysisPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 relative selection:bg-white/20 pb-12">
-      {/* Background Sheen */}
+    <div className="max-w-4xl mx-auto space-y-8 relative selection:bg-blue-100 text-slate-800 pb-12">
+      {/* Light Radial Ambient Glow */}
       <div
-        className="fixed top-0 right-0 w-[650px] h-[650px] rounded-full blur-[150px] pointer-events-none transition-all opacity-40 z-0"
+        className="fixed top-0 right-0 w-[650px] h-[650px] rounded-full blur-[140px] pointer-events-none opacity-20 z-0"
         style={{ background: theme.glow }}
       />
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10 relative z-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="accent" className="gap-1 shadow-sm">
-              <TrendingUp className="w-3.5 h-3.5" />
+            <Badge variant="accent" className="gap-1 shadow-xs">
+              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
               AI Learning Analysis
             </Badge>
-            <span className="text-xs text-white/50 font-mono font-bold">Completed Assessment</span>
+            <span className="text-xs text-slate-500 font-mono font-bold">Completed Assessment</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl text-white tracking-tight">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
             Learning Analysis: {topicName}
           </h1>
-          <p className="text-xs sm:text-sm text-white/75 mt-1 font-sans">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1 font-sans">
             Here is your diagnostic breakdown. We've identified your strengths and mapped a tailored path forward.
           </p>
         </div>
@@ -78,8 +78,8 @@ export const AnalysisPage: React.FC = () => {
           size="lg"
           onClick={handleStartPersonalizedModule}
           isLoading={loading}
-          className="font-bold cursor-pointer shadow-2xl border-none funky-button shrink-0"
-          style={{ backgroundColor: theme.primary, color: '#05070A' }}
+          className="font-bold cursor-pointer shadow-md border-none hover:scale-105 shrink-0 text-white"
+          style={{ backgroundColor: theme.primary }}
           rightIcon={<ArrowRight className="w-4 h-4" />}
         >
           Start Personalized Learning
@@ -87,15 +87,15 @@ export const AnalysisPage: React.FC = () => {
       </div>
 
       {/* MAIN KNOWLEDGE GAP ENCOURAGING BANNER */}
-      <div className="funky-card rounded-3xl p-6 sm:p-8 border border-white/15 bg-gradient-to-r from-white/[0.03] via-white/[0.06] to-white/[0.03] space-y-3 relative z-10">
-        <div className="flex items-center gap-2 text-sm font-bold" style={{ color: theme.badgeText }}>
-          <Lightbulb className="w-4 h-4" />
+      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200/80 bg-white shadow-sm space-y-3 relative z-10">
+        <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
+          <Lightbulb className="w-4 h-4 text-amber-500" />
           <span>Main Knowledge Opportunity</span>
         </div>
-        <p className="text-base sm:text-lg text-white font-semibold leading-relaxed font-sans">
+        <p className="text-base sm:text-lg text-slate-900 font-bold leading-relaxed font-display">
           "{mainGap}"
         </p>
-        <p className="text-xs text-white/65">
+        <p className="text-xs text-slate-600 font-sans">
           Encouraging Note: You are very close to full mastery! Strengthening this core gap will unlock complex queries effortlessly.
         </p>
       </div>
@@ -103,17 +103,17 @@ export const AnalysisPage: React.FC = () => {
       {/* STRENGTHS & IMPROVEMENT AREAS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
         {/* STRONG CONCEPTS */}
-        <div className="funky-card rounded-3xl p-6 border border-[#7ED6A5]/30 space-y-4">
-          <div className="flex items-center gap-2 text-[#7ED6A5] font-bold text-base">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="rounded-3xl p-6 bg-white border border-emerald-200 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-emerald-800 font-bold text-base font-display">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             <span>Strong Concepts</span>
           </div>
-          <p className="text-xs text-white/60">Concepts where you demonstrated clear accuracy and confidence:</p>
+          <p className="text-xs text-slate-600 font-sans">Concepts where you demonstrated clear accuracy and confidence:</p>
 
           <ul className="space-y-2.5 pt-1">
             {strongConcepts.map((item) => (
-              <li key={item} className="flex items-center gap-3 p-3 rounded-2xl bg-[#7ED6A5]/10 border border-[#7ED6A5]/20 text-xs font-semibold text-white">
-                <Check className="w-4 h-4 text-[#7ED6A5] shrink-0" />
+              <li key={item} className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-900">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{item}</span>
               </li>
             ))}
@@ -121,17 +121,17 @@ export const AnalysisPage: React.FC = () => {
         </div>
 
         {/* NEEDS IMPROVEMENT */}
-        <div className="funky-card rounded-3xl p-6 border border-[#F4C56A]/30 space-y-4">
-          <div className="flex items-center gap-2 text-[#F4C56A] font-bold text-base">
-            <AlertCircle className="w-5 h-5" />
+        <div className="rounded-3xl p-6 bg-white border border-amber-200 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-amber-800 font-bold text-base font-display">
+            <AlertCircle className="w-5 h-5 text-amber-600" />
             <span>Concepts to Strengthen</span>
           </div>
-          <p className="text-xs text-white/60">Target areas we will focus on in your personalized module:</p>
+          <p className="text-xs text-slate-600 font-sans">Target areas we will focus on in your personalized module:</p>
 
           <ul className="space-y-2.5 pt-1">
             {needsImprovement.map((item) => (
-              <li key={item} className="flex items-center gap-3 p-3 rounded-2xl bg-[#F4C56A]/10 border border-[#F4C56A]/20 text-xs font-semibold text-white">
-                <Sparkles className="w-4 h-4 text-[#F4C56A] shrink-0" />
+              <li key={item} className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>{item}</span>
               </li>
             ))}
@@ -140,19 +140,19 @@ export const AnalysisPage: React.FC = () => {
       </div>
 
       {/* RECOMMENDED LEARNING PATH */}
-      <div className="funky-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4 relative z-10">
+      <div className="rounded-3xl p-6 sm:p-8 bg-white border border-slate-200/80 shadow-sm space-y-4 relative z-10">
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5" style={{ color: theme.primary }} />
-          <h2 className="text-xl font-serif text-white">Recommended Learning Path</h2>
+          <h2 className="text-xl font-display font-bold text-slate-900">Recommended Learning Path</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           {recommendedPath.map((step, idx) => (
-            <div key={step} className="p-4 rounded-2xl bg-[#05070A] border border-white/10 space-y-1 text-xs">
-              <span className="text-[10px] font-mono font-bold uppercase" style={{ color: theme.badgeText }}>
+            <div key={step} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1 text-xs">
+              <span className="text-[10px] font-mono font-bold uppercase text-blue-600">
                 Step 0{idx + 1}
               </span>
-              <p className="font-semibold text-white">{step}</p>
+              <p className="font-bold text-slate-900 font-sans">{step}</p>
             </div>
           ))}
         </div>
@@ -165,8 +165,8 @@ export const AnalysisPage: React.FC = () => {
           size="lg"
           onClick={handleStartPersonalizedModule}
           isLoading={loading}
-          className="font-bold cursor-pointer shadow-2xl px-8 py-4 border-none funky-button"
-          style={{ backgroundColor: theme.primary, color: '#05070A' }}
+          className="font-bold cursor-pointer shadow-md px-8 py-4 border-none hover:scale-105 transition-transform text-white"
+          style={{ backgroundColor: theme.primary }}
           rightIcon={<ArrowRight className="w-5 h-5" />}
         >
           Start Personalized Learning

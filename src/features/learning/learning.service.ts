@@ -2,8 +2,8 @@ import { supabase } from '@/services/supabase/client';
 import type { LearningSessionData, ConceptMasteryRecord } from './learning.types';
 import type { TopicAnalysisResult, MasteryLevel } from '@/services/ai/ai.types';
 
-const SESSIONS_STORAGE_KEY = 'aether_learning_sessions_v1';
-const MASTERY_STORAGE_KEY = 'aether_concept_mastery_v1';
+const SESSIONS_STORAGE_KEY = 'metamind_learning_sessions_v1';
+const MASTERY_STORAGE_KEY = 'metamind_concept_mastery_v1';
 
 export const learningService = {
   // Get active sessions for user

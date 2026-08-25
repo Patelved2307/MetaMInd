@@ -33,15 +33,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let userProfile = await authService.getProfile(currUser.id);
       
       if (!userProfile) {
-        // Fallback profile if trigger is delayed or not configured yet
-        const metaName = currUser.user_metadata?.full_name || currUser.email?.split('@')[0] || 'Learner';
-        userProfile = await authService.createProfileFallback(currUser.id, metaName);
+        const cached = localStorage.getItem('active_user_profile');
+        if (cached) {
+          userProfile = JSON.parse(cached);
+        } else {
+          const metaName = currUser.user_metadata?.full_name || currUser.email?.split('@')[0] || 'Learner';
+          userProfile = await authService.createProfileFallback(currUser.id, metaName);
+        }
       }
 
-      // Enforce Sanitized 3D PNG Avatar Path
-      userProfile.avatar_url = sanitizeAvatarUrl(userProfile.avatar_url ?? undefined);
+      if (userProfile) {
+        userProfile.avatar_url = sanitizeAvatarUrl(userProfile.avatar_url ?? undefined);
+        setProfile(userProfile);
+        localStorage.setItem('active_user_profile', JSON.stringify(userProfile));
+      }
 
-      setProfile(userProfile);
       return userProfile;
     } catch (err) {
       console.error('Failed to load user profile:', err);
@@ -211,10 +217,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (data: ProfileUpdateData) => {
-    if (!user) throw new Error('No authenticated user found');
-    const updated = await authService.updateProfile(user.id, data);
+    const activeUserId = user?.id || profile?.id || 'demo_user';
+    const updated = await authService.updateProfile(activeUserId, data);
     if (updated) {
+      updated.avatar_url = sanitizeAvatarUrl(updated.avatar_url || undefined);
       setProfile(updated);
+      localStorage.setItem('active_user_profile', JSON.stringify(updated));
     }
   };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Globe, ArrowUpRight } from 'lucide-react';
+import { Globe, ArrowUpRight } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -14,14 +14,11 @@ export const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 flex items-center justify-center liquid-glass">
-                <Sparkles className="w-5 h-5 text-[#8DD3FF]" />
-              </div>
-              <span className="font-display text-2xl text-white tracking-tight">Aether Learn</span>
+              <img src="/assets/brand/metamind_logo_white.png" alt="MetaMind" className="h-10 w-auto object-contain" />
             </Link>
 
             <p className="text-sm text-white/70 max-w-sm leading-relaxed">
-              Don't just get an answer. Understand what you need to learn next. Aether transforms doubts into structured concept maps, diagnostic gap analysis, and adaptive mastery journeys.
+              Don't just get an answer. Understand what you need to learn next. MetaMind transforms doubts into structured concept maps, diagnostic gap analysis, and adaptive mastery journeys.
             </p>
 
             <div className="pt-2">
@@ -88,7 +85,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Divider & Socials */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
-          <p>© {new Date().getFullYear()} Aether Learn. Built for AI with Education Hackathon.</p>
+          <p>© {new Date().getFullYear()} MetaMind. Built for AI with Education Hackathon.</p>
 
           <div className="flex items-center gap-4">
             <a

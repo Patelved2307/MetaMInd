@@ -62,38 +62,38 @@ export const PracticePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 relative selection:bg-white/20">
-      {/* Background Sheen */}
+    <div className="max-w-3xl mx-auto space-y-8 relative selection:bg-blue-100 text-slate-800">
+      {/* Light Radial Ambient Glow */}
       <div
-        className="fixed top-0 right-0 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none transition-all opacity-40 z-0"
+        className="fixed top-0 right-0 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none opacity-20 z-0"
         style={{ background: theme.glow }}
       />
 
       {/* HEADER */}
       <div className="space-y-2 relative z-10">
         <div className="flex items-center gap-2">
-          <Badge variant="success" className="gap-1">
-            <Target className="w-3.5 h-3.5" />
+          <Badge variant="success" className="gap-1 shadow-xs">
+            <Target className="w-3.5 h-3.5 text-emerald-600" />
             Targeted Reassessment
           </Badge>
-          <span className="text-xs text-white/50 font-mono">Topic: {topicName}</span>
+          <span className="text-xs text-slate-500 font-mono">Topic: {topicName}</span>
         </div>
-        <h1 className="font-serif text-3xl sm:text-5xl text-white tracking-tight">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
           Let's check how much clearer this is now.
         </h1>
-        <p className="text-xs sm:text-sm text-white/70">
+        <p className="text-xs sm:text-sm text-slate-600 font-sans">
           Targeted practice specifically designed around your weak concepts and recent insights.
         </p>
       </div>
 
       {practiceStep === 'practice' ? (
         /* PRACTICE QUESTION CONTAINER */
-        <div className="liquid-glass rounded-3xl p-6 sm:p-10 border border-white/10 space-y-6 relative z-10">
+        <div className="rounded-3xl p-6 sm:p-10 bg-white border border-slate-200/80 shadow-md space-y-6 relative z-10">
           <div className="space-y-1">
-            <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-white/5 text-[#8DD3FF]">
+            <span className="text-xs font-mono font-bold uppercase px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
               Target Concept: {practiceQuestion.conceptName}
             </span>
-            <h2 className="text-xl sm:text-2xl font-semibold text-white leading-relaxed pt-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-relaxed pt-3 font-display">
               {practiceQuestion.question}
             </h2>
           </div>
@@ -101,10 +101,10 @@ export const PracticePage: React.FC = () => {
           <div className="space-y-3 pt-2">
             {practiceQuestion.options.map((option, idx) => {
               const isSelected = selectedAnswer === option;
-              let style = 'bg-[#05070A] border-white/10 text-white/80 hover:border-white/25 hover:bg-white/[0.03]';
+              let style = 'bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-100';
 
               if (isSelected) {
-                style = 'liquid-glass border-2 text-white font-medium shadow-lg';
+                style = 'bg-blue-50/80 border-2 border-blue-500 text-blue-900 font-semibold shadow-sm';
               }
 
               return (
@@ -112,23 +112,22 @@ export const PracticePage: React.FC = () => {
                   key={idx}
                   type="button"
                   onClick={() => setSelectedAnswer(option)}
-                  style={{ borderColor: isSelected ? theme.primary : undefined }}
                   className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${style}`}
                 >
-                  <span className="text-sm">{option}</span>
+                  <span className="text-sm font-sans">{option}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-white/10">
+          <div className="flex justify-end pt-4 border-t border-slate-100">
             <Button
               variant="primary"
               onClick={handlePracticeSubmit}
               disabled={!selectedAnswer}
               isLoading={loading}
-              className="font-semibold cursor-pointer border-none"
-              style={{ backgroundColor: theme.primary, color: '#05070A' }}
+              className="font-bold cursor-pointer border-none shadow-md hover:scale-105 text-white"
+              style={{ backgroundColor: theme.primary }}
               rightIcon={<Check className="w-4 h-4" />}
             >
               Submit Practice Answer
@@ -137,43 +136,43 @@ export const PracticePage: React.FC = () => {
         </div>
       ) : (
         /* MASTERY IMPROVEMENT RESULTS BANNER */
-        <div className="liquid-glass rounded-3xl p-8 sm:p-12 border border-[#7ED6A5]/40 bg-gradient-to-r from-[#0B1A10] via-[#122B1B] to-[#060D08] space-y-8 relative z-10 text-center">
+        <div className="rounded-3xl p-8 sm:p-12 bg-white border border-emerald-200 shadow-md space-y-8 relative z-10 text-center">
           <div className="space-y-4 max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-[#7ED6A5]/20 border border-[#7ED6A5]/40 flex items-center justify-center mx-auto shadow-xl">
-              <Trophy className="w-8 h-8 text-[#7ED6A5]" />
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto shadow-xs">
+              <Trophy className="w-8 h-8 text-emerald-600" />
             </div>
 
-            <h2 className="text-3xl sm:text-4xl font-serif text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
               Great progress! You've strengthened your understanding of LEFT JOIN.
             </h2>
 
-            <p className="text-sm text-white/80 leading-relaxed font-sans">
+            <p className="text-sm text-slate-600 leading-relaxed font-sans">
               Your targeted practice demonstrates key clarity in unmatched row preservation and NULL field handling.
             </p>
           </div>
 
           {/* MASTERY SCORE PROMOTION CARD */}
-          <div className="max-w-md mx-auto p-6 rounded-2xl bg-[#05070A] border border-white/10 space-y-4 text-left font-mono text-xs">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-white/60">Concept Mastery Update</span>
-              <span className="text-[#7ED6A5] font-bold">STATUS PROMOTED</span>
+          <div className="max-w-md mx-auto p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 text-left font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <span className="text-slate-500">Concept Mastery Update</span>
+              <span className="text-emerald-700 font-bold">STATUS PROMOTED</span>
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-white font-sans font-semibold">LEFT JOIN</span>
-              <span className="text-[#7ED6A5] font-bold">35% → 72%</span>
+              <span className="text-slate-900 font-sans font-bold">LEFT JOIN</span>
+              <span className="text-emerald-700 font-bold">35% → 72%</span>
             </div>
 
             <div className="space-y-1">
-              <div className="flex justify-between text-[11px] text-white/50">
+              <div className="flex justify-between text-[11px] text-slate-500">
                 <span>Mastery Level</span>
-                <span className="text-[#7ED6A5]">COMPETENT</span>
+                <span className="text-emerald-700 font-bold">COMPETENT</span>
               </div>
               <Progress value={72} variant="success" size="sm" />
             </div>
 
-            <div className="pt-2 flex items-center gap-1.5 text-white/60 text-[11px]">
-              <Flame className="w-3.5 h-3.5 text-[#FF8B8B]" />
+            <div className="pt-2 flex items-center gap-1.5 text-slate-600 text-[11px]">
+              <Flame className="w-3.5 h-3.5 text-orange-500" />
               <span>Streak Updated (+50 XP Earned)</span>
             </div>
           </div>
@@ -184,8 +183,8 @@ export const PracticePage: React.FC = () => {
               variant="primary"
               size="lg"
               onClick={handleReturnToDashboard}
-              className="font-semibold cursor-pointer shadow-xl px-8 py-3.5 border-none hover:scale-105"
-              style={{ backgroundColor: theme.primary, color: '#05070A' }}
+              className="font-bold cursor-pointer shadow-md px-8 py-3.5 border-none hover:scale-105 text-white"
+              style={{ backgroundColor: theme.primary }}
               rightIcon={<ArrowRight className="w-5 h-5" />}
             >
               Return to Dashboard

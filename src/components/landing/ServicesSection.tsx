@@ -7,7 +7,7 @@ const services = [
   {
     tag: 'AI Learn & Concept Discovery',
     title: 'Doubt to Concept Path',
-    description: 'Submit any question or topic. Aether automatically extracts the subject, main topic, prerequisite concepts, and underlying dependencies.',
+    description: 'Submit any question or topic. MetaMind automatically extracts the subject, main topic, prerequisite concepts, and underlying dependencies.',
     videoUrl: 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4',
     link: '/sign-up',
   },

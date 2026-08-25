@@ -37,7 +37,7 @@ export const FeaturedVideoSection: React.FC = () => {
                 Our Core Learning Loop
               </p>
               <p className="text-white text-sm md:text-base leading-relaxed">
-                "Don't just get an answer. Understand what you need to learn next." Aether extracts prerequisites, generates adaptive diagnostic questions, detects knowledge gaps, and tailors explanations to your demonstrated level.
+                "Don't just get an answer. Understand what you need to learn next." MetaMind extracts prerequisites, generates adaptive diagnostic questions, detects knowledge gaps, and tailors explanations to your demonstrated level.
               </p>
             </div>
 

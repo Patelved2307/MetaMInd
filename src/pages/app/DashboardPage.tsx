@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { useLearning } from '@/features/learning';
-import { getAvatarPresetByUrl, generateAvatarUrl } from '@/lib/avatarGenerator';
+import { getAvatarPresetByUrl, generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 import { AvatarSelectorModal } from '@/components/ui/AvatarSelectorModal';
 import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
@@ -10,27 +10,21 @@ import {
   Sparkles,
   ArrowRight,
   BookOpen,
-  Target,
-  Brain,
-  CheckCircle2,
-  AlertTriangle,
-  Flame,
-  Play,
-  Trophy,
-  Award,
-  FileCheck,
-  Compass,
-  UserCheck,
   Search,
+  Crown,
+  Play,
+  ThumbsUp,
+  ChevronLeft,
+  ChevronRight,
   Zap,
+  FileCheck,
+  Award,
+  Compass,
+  TrendingUp,
+  Users,
+  Activity,
+  UserCheck,
 } from 'lucide-react';
-
-const EXAMPLE_DOUBTS = [
-  "I don't understand SQL JOINs",
-  'Explain recursion to me',
-  'Help me understand photosynthesis',
-  'Teach me machine learning from basics',
-];
 
 export const DashboardPage: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -47,9 +41,13 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [queryInput, setQueryInput] = useState('');
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'D' | 'W' | 'M'>('D');
+  const [carouselStep, setCarouselStep] = useState(2);
 
+  const studentName = profile?.full_name || user?.user_metadata?.full_name || 'Vipin';
   const username = profile?.username || 'learner';
-  const avatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
+  const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
+  const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
 
   const activePreset = getAvatarPresetByUrl(avatarUrl);
   const theme = activePreset.theme;
@@ -81,201 +79,467 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 relative selection:bg-white/20 pb-12 max-w-6xl mx-auto">
-      {/* Dynamic Ambient Background Glow */}
+    <div className="space-y-8 max-w-7xl mx-auto pb-16 text-slate-800 selection:bg-blue-100">
+      {/* Dynamic Radial Ambient Light Glow tied to Auto-Assigned Avatar Theme */}
       <div
-        className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none transition-all duration-700 opacity-40 z-0"
+        className="fixed top-0 right-0 w-[650px] h-[650px] rounded-full blur-[140px] pointer-events-none transition-all duration-700 opacity-20 z-0"
         style={{ background: theme.glow }}
       />
 
-      {/* HERO SECTION — PRIMARY AI COMMAND CENTER */}
-      <section className="relative z-10">
-        <div
-          className={`focus-card rounded-3xl p-8 sm:p-10 border relative overflow-hidden bg-gradient-to-r ${theme.heroGradient}`}
-          style={{ borderColor: theme.border }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-            {/* Left Side: Topic / Doubt Search */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Persona Tag & XP Level */}
-              <div className="flex flex-wrap items-center gap-3">
+      {/* TOP HEADER BAR */}
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+        <div className="flex items-center gap-3.5">
+          <div
+            onClick={() => setIsAvatarModalOpen(true)}
+            className="relative cursor-pointer group"
+          >
+            <img
+              src={avatarUrl}
+              alt="Assigned 3D Persona"
+              className="w-13 h-13 rounded-2xl border-2 object-cover transition-transform group-hover:scale-105 shadow-md bg-white"
+              style={{ borderColor: theme.primary }}
+            />
+            <span
+              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold"
+              style={{ backgroundColor: theme.primary }}
+            >
+              ✓
+            </span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl sm:text-4xl font-display font-bold text-slate-900 tracking-tight">
+                Hello, {studentName}
+              </h1>
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[10px] font-mono border font-bold"
+                style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, borderColor: theme.border }}
+              >
+                {theme.themeName}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5 font-sans font-medium">
+              Avatar-Driven Color Theme • @{username}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Global Search Bar */}
+          <div className="relative flex-1 md:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={queryInput}
+              onChange={(e) => {
+                setQueryInput(e.target.value);
+                if (error) clearError();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleStartJourney(e);
+              }}
+              placeholder="Search topics, modules or doubts..."
+              className="w-full bg-white border border-slate-200/90 rounded-full pl-10 pr-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:border-blue-500 shadow-sm transition-all"
+            />
+          </div>
+
+          {/* Upgrade / Scholar Pro Badge */}
+          <button
+            onClick={() => setIsAvatarModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-300 text-xs font-bold text-amber-700 hover:scale-105 transition-all shrink-0 cursor-pointer shadow-sm"
+          >
+            <Crown className="w-4 h-4 text-amber-500" />
+            <span>Scholar Pro</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Error Notice */}
+      {error && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between z-10 relative">
+          <span>{error}</span>
+          <button onClick={clearError} className="text-xs underline font-medium cursor-pointer">Dismiss</button>
+        </div>
+      )}
+
+      {/* AI Search Banner loading state */}
+      {loading && (
+        <div className="p-4 rounded-2xl bg-white border border-blue-200 flex items-center justify-center gap-3 text-sm text-slate-800 shadow-sm relative z-10">
+          <Sparkles className="w-5 h-5 animate-spin text-blue-600" />
+          <span className="font-medium animate-pulse">{loadingMessage || 'Generating custom learning session concept graph...'}</span>
+        </div>
+      )}
+
+      {/* MAIN LAYOUT GRID (LEFT HERO & METRICS + RIGHT SQUAD PANEL) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+        {/* LEFT COLUMN: HERO & ACTIVITY (8 cols) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* HERO BANNER CARD (VIBRANT ACCENT GRADIENT) */}
+          <div
+            className={`rounded-3xl p-8 bg-gradient-to-r ${theme.heroGradient} text-slate-900 relative overflow-hidden flex flex-col justify-between min-h-[300px] shadow-sm border border-slate-200/80 group`}
+          >
+            <div className="space-y-3 max-w-md relative z-10">
+              <span className="px-3 py-1 rounded-full bg-white/80 border border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-800 shadow-sm">
+                ⚡ Adaptive Learning Workspace
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight leading-tight text-slate-900">
+                Let's study & master concepts today!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-700 font-sans leading-relaxed">
+                Your assigned persona <span className="font-bold text-slate-900">"{activePreset.name}"</span> is active. Turn doubts into interactive concept maps.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-900/10 relative z-10 mt-6">
+              <div className="flex items-center gap-3">
                 <div
                   onClick={() => setIsAvatarModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border cursor-pointer hover:scale-105 transition-all shadow-sm"
-                  style={{ borderColor: theme.border }}
-                >
-                  <UserCheck className="w-4 h-4" style={{ color: theme.badgeText }} />
-                  <span className="text-xs font-semibold" style={{ color: theme.badgeText }}>
-                    {activePreset.name} • @{username}
-                  </span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-white/90">
-                  <Trophy className="w-3.5 h-3.5 text-[#F59E0B]" />
-                  <span>Level 4 Scholar • 1,450 XP</span>
-                </div>
-              </div>
-
-              {/* Main Heading */}
-              <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-white tracking-tight leading-tight">
-                  What topic would you like to master today?
-                </h1>
-                <p className="text-sm sm:text-base text-white/70 font-sans leading-relaxed">
-                  Enter any doubt or topic. Our AI transforms it into an interactive concept map and diagnostic assessment.
-                </p>
-              </div>
-
-              {/* High-Contrast Search Input Bar */}
-              <form onSubmit={(e) => handleStartJourney(e)} className="pt-1">
-                <div
-                  className="focus-card rounded-2xl p-2 flex flex-col sm:flex-row items-center gap-3 border transition-all focus-within:border-2"
+                  className="w-12 h-12 rounded-2xl border-2 overflow-hidden bg-white cursor-pointer hover:scale-105 transition-transform shadow-sm"
                   style={{ borderColor: theme.primary }}
                 >
-                  <div className="flex items-center gap-2 pl-3 w-full sm:w-auto flex-1">
-                    <Search className="w-5 h-5 text-white/40 shrink-0" />
-                    <input
-                      type="text"
-                      value={queryInput}
-                      onChange={(e) => {
-                        setQueryInput(e.target.value);
-                        if (error) clearError();
-                      }}
-                      placeholder="Ask anything... e.g. 'I don't understand SQL JOINs'"
-                      className="w-full bg-transparent text-white placeholder:text-white/40 text-sm sm:text-base py-3 outline-none border-none"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    isLoading={loading}
-                    className="w-full sm:w-auto font-semibold shrink-0 cursor-pointer px-6 py-3.5 border-none focus-button shadow-xl"
-                    style={{ backgroundColor: theme.primary, color: '#05070A' }}
-                    rightIcon={<ArrowRight className="w-5 h-5" />}
-                  >
-                    Start Journey
-                  </Button>
+                  <img src={avatarUrl} alt="Persona" className="w-full h-full object-cover" />
                 </div>
-              </form>
-
-              {/* Error Notice */}
-              {error && (
-                <div className="p-3.5 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-xs text-[#EF4444] flex items-center justify-between">
-                  <span>{error}</span>
-                  <button onClick={clearError} className="text-xs underline font-medium cursor-pointer">Dismiss</button>
-                </div>
-              )}
-
-              {/* AI Loading State */}
-              {loading && (
-                <div className="p-4 rounded-xl focus-card border flex items-center justify-center gap-3 text-sm text-white" style={{ borderColor: theme.border }}>
-                  <Sparkles className="w-5 h-5 animate-spin" style={{ color: theme.primary }} />
-                  <span className="font-medium animate-pulse">{loadingMessage || 'Analyzing topic & building concept graph...'}</span>
-                </div>
-              )}
-
-              {/* Shortcut Doubts */}
-              <div className="pt-1">
-                <p className="text-[11px] text-white/50 uppercase tracking-widest font-semibold mb-2">
-                  Popular topics:
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {EXAMPLE_DOUBTS.map((doubt) => (
-                    <button
-                      key={doubt}
-                      type="button"
-                      onClick={() => {
-                        setQueryInput(doubt);
-                        handleStartJourney(undefined, doubt);
-                      }}
-                      className="px-3 py-1.5 rounded-full bg-white/5 text-xs text-white/80 hover:text-white border border-white/10 hover:border-white/30 focus-button cursor-pointer"
-                    >
-                      "{doubt}"
-                    </button>
-                  ))}
+                <div>
+                  <p className="text-xs font-bold text-slate-900">{activePreset.name}</p>
+                  <p className="text-[10px] font-mono font-semibold" style={{ color: theme.primary }}>
+                    Auto-selected • Light Theme
+                  </p>
                 </div>
               </div>
+
+              <button
+                onClick={() => handleStartJourney(undefined, queryInput || "Computer Science Fundamentals")}
+                className="px-6 py-3 rounded-full text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105"
+                style={{ backgroundColor: theme.primary }}
+              >
+                <span>Get Started Free</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* YOUR ACTIVITIES ROW (Inspired by Reference Mockups: +35, +72, -05 with sparklines) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-600" />
+                Your Learning Activities
+              </h3>
+              <span className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer font-medium">See all</span>
             </div>
 
-            {/* Right Side: Clean 3D Persona Display */}
-            <div className="lg:col-span-5 flex flex-col items-center justify-center relative pt-4 lg:pt-0">
-              <div
-                onClick={() => setIsAvatarModalOpen(true)}
-                className="group relative flex flex-col items-center justify-center cursor-pointer transition-all duration-300 w-full max-w-sm"
-              >
-                {/* Glow Backdrop Disk */}
-                <div
-                  className="absolute w-56 h-56 sm:w-72 sm:h-72 rounded-full blur-[75px] opacity-50 transition-all pointer-events-none"
-                  style={{ backgroundColor: theme.primary }}
-                />
-
-                <div
-                  className="absolute bottom-6 w-48 h-10 sm:w-56 sm:h-12 rounded-[100%] blur-md pointer-events-none opacity-80"
-                  style={{ backgroundColor: theme.primary }}
-                />
-
-                {/* 3D PERSONA CHARACTER */}
-                <div className="relative z-10 w-60 h-72 sm:w-72 sm:h-80 overflow-hidden flex items-end justify-center">
-                  <img
-                    src={avatarUrl}
-                    alt="3D Character Persona"
-                    className="w-full h-full object-contain pointer-events-none filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-300 [mask-image:linear-gradient(to_bottom,black_70%,transparent_96%)]"
-                  />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Activity Card 1 */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/80 flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                <div>
+                  <p className="text-[11px] font-mono text-slate-500">Math Mastery</p>
+                  <p className="text-2xl font-extrabold text-emerald-600 font-display mt-0.5">+35 XP</p>
                 </div>
+                <div className="w-16 h-10">
+                  <svg className="w-full h-full" viewBox="0 0 60 30">
+                    <path d="M0 25 Q 15 5, 30 20 T 60 5" fill="none" stroke="#059669" strokeWidth="2.5" />
+                  </svg>
+                </div>
+              </div>
 
-                {/* Persona Badge Pill */}
-                <div
-                  className="relative z-20 -mt-2 px-4 py-2 rounded-2xl bg-[#0D1117]/90 border border-white/15 shadow-xl flex items-center gap-2 text-xs font-semibold text-white group-hover:scale-105 transition-all"
-                  style={{ borderColor: theme.border }}
-                >
-                  <Sparkles className="w-4 h-4" style={{ color: theme.badgeText }} />
-                  <span>{activePreset.name}</span>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText }}>
-                    3D Persona
-                  </span>
+              {/* Activity Card 2 */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/80 flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                <div>
+                  <p className="text-[11px] font-mono text-slate-500">Coding Accuracy</p>
+                  <p className="text-2xl font-extrabold text-blue-600 font-display mt-0.5">+72 %</p>
+                </div>
+                <div className="w-16 h-10">
+                  <svg className="w-full h-full" viewBox="0 0 60 30">
+                    <path d="M0 20 Q 15 28, 30 10 T 60 2" fill="none" stroke="#2563EB" strokeWidth="2.5" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Activity Card 3 */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/80 flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                <div>
+                  <p className="text-[11px] font-mono text-slate-500">Physics Review</p>
+                  <p className="text-2xl font-extrabold text-rose-500 font-display mt-0.5">-05 Mins</p>
+                </div>
+                <div className="w-16 h-10">
+                  <svg className="w-full h-full" viewBox="0 0 60 30">
+                    <path d="M0 5 Q 15 25, 30 10 T 60 28" fill="none" stroke="#F43F5E" strokeWidth="2.5" />
+                  </svg>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* GAMIFIED DAILY QUEST CARD */}
-      <section className="relative z-10">
-        <div className="focus-card rounded-2xl p-5 border border-white/10 bg-gradient-to-r from-white/[0.02] via-white/[0.05] to-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-xl border" style={{ backgroundColor: theme.badgeBg, borderColor: theme.border }}>
-              <Zap className="w-5 h-5" style={{ color: theme.badgeText }} />
+        {/* RIGHT COLUMN: STUDY FOCUS & CLASSMATES PANEL (4 cols) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* STUDY FOCUS STATUS WIDGET */}
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white space-y-5 shadow-md border border-blue-500">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-bold font-display">Study Focus Status</h3>
+                <p className="text-xs text-blue-100">Daily Target: 2.50 Hours</p>
+              </div>
+              <div className="flex gap-1 p-1 rounded-full bg-white/20 text-[10px] font-bold">
+                {(['D', 'W', 'M'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                      activeTab === t ? 'bg-white text-blue-700 font-bold' : 'text-blue-100'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="px-3 py-1 rounded-full bg-emerald-300 text-emerald-950 font-bold text-xs flex items-center gap-1 shadow-sm">
+                Well Done <ThumbsUp className="w-3 h-3" />
+              </span>
+              <div className="grid grid-cols-5 gap-1">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className={`w-3 h-5 rounded-t-sm ${i < 7 ? 'bg-white' : 'bg-white/30'}`} />
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-white/20 pt-3 flex justify-between items-end">
+              <div>
+                <span className="text-3xl font-extrabold font-display">2.50h</span>
+                <span className="text-[10px] font-mono text-blue-100 block">Focus Completed</span>
+              </div>
+              <span className="text-xs font-mono bg-white/20 px-2.5 py-1 rounded-full font-bold">🔥 5 Days</span>
+            </div>
+          </div>
+
+          {/* YOUR FRIENDS & CLASSMATES PANEL (Inspired by Reference Mockups) */}
+          <div className="rounded-3xl p-5 bg-white border border-slate-200/80 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-bold text-slate-900">Study Squad</h3>
+              </div>
+              <button
+                onClick={() => navigate('/app/study-room')}
+                className="text-xs text-blue-600 hover:underline font-bold"
+              >
+                Join Room →
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-[10px] uppercase font-mono tracking-widest text-emerald-600 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online Classmates
+              </div>
+
+              {/* Classmate 1 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                    alt="Classmate"
+                    className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Wade Warren</p>
+                    <p className="text-[10px] text-slate-500">Computer Science</p>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">
+                  Studying
+                </span>
+              </div>
+
+              {/* Classmate 2 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+                    alt="Classmate"
+                    className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Brooklyn Simmons</p>
+                    <p className="text-[10px] text-slate-500">Data Structures</p>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                  In Exam
+                </span>
+              </div>
+
+              <div className="text-[10px] uppercase font-mono tracking-widest text-slate-400 font-bold pt-1">
+                Offline
+              </div>
+
+              {/* Classmate 3 */}
+              <div className="flex items-center justify-between opacity-70">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
+                    alt="Classmate"
+                    className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Jenny Wilson</p>
+                    <p className="text-[10px] text-slate-500">Mathematics</p>
+                  </div>
+                </div>
+                <span className="text-[10px] text-slate-400">2h ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 2: THREE METRICS CARDS */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        {/* CARD 1: DEEP FOCUS & ACTIVE RECALL TIP */}
+        <div className="rounded-3xl p-6 bg-white border border-slate-200/80 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-all">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-bold text-slate-800">Active Recall Protocol</span>
+            </div>
+
+            <h3 className="text-xl font-bold font-display text-slate-900 leading-snug">
+              Experience the Goodness of Deep Focus
+            </h3>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                <span>🌙 Deep Focus Mode</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Discover techniques for active recall and distraction-free study sessions. Master concepts faster with scheduled breaks.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs">
+            <span className="font-mono text-slate-500">{carouselStep} / 5</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCarouselStep((prev) => Math.max(1, prev - 1))}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCarouselStep((prev) => Math.min(5, prev + 1))}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* CARD 2: DAILY STUDY MINUTES & SUBJECT BREAKDOWN */}
+        <div className="rounded-3xl p-6 bg-white border border-slate-200/80 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-all">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold text-slate-900">Study Energy</span>
+              </div>
+              <span className="text-xs font-mono text-slate-500">Daily Goal</span>
+            </div>
+
+            <p className="text-xs text-slate-500">Lack of study focus slows concept mastery</p>
+
+            <div>
+              <span className="text-4xl font-extrabold font-display text-slate-900">2.040</span>
+              <span className="text-xs font-mono text-slate-500 ml-1">/ Mins</span>
+            </div>
+
+            <div className="pt-2 space-y-1">
+              <div className="flex items-end justify-between gap-1 h-14">
+                {[40, 65, 80, 50, 90, 75, 100, 85, 60, 95, 70, 80, 85, 90, 60, 75, 80, 95].map((h, i) => (
+                  <div
+                    key={i}
+                    style={{ height: `${h}%` }}
+                    className="flex-1 bg-emerald-500 rounded-t-sm opacity-90 hover:opacity-100 transition-all"
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                <span>0</span>
+                <span>2.350</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-center">
+            <div>
+              <p className="text-sm font-bold text-slate-900 font-mono">269 Mins</p>
+              <p className="text-[10px] text-slate-500">Computer Science</p>
             </div>
             <div>
+              <p className="text-sm font-bold text-slate-900 font-mono">164 Mins</p>
+              <p className="text-[10px] text-slate-500">Mathematics</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900 font-mono">110 Mins</p>
+              <p className="text-[10px] text-slate-500">Physics</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CARD 3: MASTERY TRAJECTORY */}
+        <div className="rounded-3xl p-6 bg-white border border-slate-200/80 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-all">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold uppercase text-white/60">Daily Learning Quest</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] font-bold">+150 XP</span>
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold text-slate-900">Mastery Score</span>
               </div>
-              <p className="text-sm font-semibold text-white">Complete 1 Diagnostic Assessment & Practice Session today</p>
+              <span className="text-xs font-mono text-slate-500">Target 85% - 95%</span>
+            </div>
+
+            <p className="text-xs text-slate-500">Healthy score benchmark achieved</p>
+
+            <div className="h-20 w-full relative py-2">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 200 60" preserveAspectRatio="none">
+                <path d="M0 40 Q 50 10, 100 35 T 200 20" fill="none" stroke="#2563EB" strokeWidth="3" />
+                <path d="M0 25 Q 50 50, 100 15 T 200 40" fill="none" stroke="#059669" strokeWidth="3" strokeDasharray="4 2" />
+              </svg>
+            </div>
+
+            <div>
+              <span className="text-5xl font-extrabold font-display text-slate-900">82%</span>
+              <span className="text-xs font-mono text-slate-500 ml-2">Accuracy Rate</span>
             </div>
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleStartJourney(undefined, "SQL JOINs")}
-            className="shrink-0 text-xs bg-white/5 text-white border-white/15 hover:bg-white/10 focus-button cursor-pointer"
-          >
-            Start Daily Quest →
-          </Button>
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+            <div>
+              <p className="text-xs text-slate-500">Of the weekly plan completed</p>
+              <p className="text-xs font-bold text-emerald-600">Keep it up!</p>
+            </div>
+            <button
+              onClick={() => navigate('/app/analysis')}
+              className="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+            >
+              Detailed Analytics →
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* ACTIVE LEARNING JOURNEY (CONTINUE LEARNING) */}
-      <section className="space-y-4 relative z-10">
+      {/* SECTION 3: ACTIVE LEARNING SESSIONS */}
+      <section className="space-y-4 relative z-10 pt-2">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-display font-bold text-white">Continue Learning</h2>
-            <p className="text-xs text-white/60">Resume your in-progress topics right where you left off</p>
+            <h2 className="text-2xl font-display font-bold text-slate-900">Continue Learning</h2>
+            <p className="text-xs text-slate-500">Resume your in-progress topics right where you left off</p>
           </div>
         </div>
 
@@ -284,22 +548,22 @@ export const DashboardPage: React.FC = () => {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="focus-card rounded-2xl p-5 border border-white/10 space-y-4 flex flex-col justify-between group"
+                className="rounded-3xl p-5 bg-white border border-slate-200/80 space-y-4 flex flex-col justify-between group hover:shadow-md transition-all"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70">
+                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
                       {session.subject}
                     </span>
-                    <span className="text-xs font-semibold" style={{ color: theme.badgeText }}>
+                    <span className="text-xs font-bold text-blue-600">
                       {session.progressPercent}%
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white group-hover:text-[#38BDF8] transition-colors">
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                     {session.topic}
                   </h3>
-                  <p className="text-xs text-white/60 line-clamp-2">
-                    Query: "{session.originalQuery}"
+                  <p className="text-xs text-slate-500 line-clamp-2 font-mono">
+                    "{session.originalQuery}"
                   </p>
                 </div>
 
@@ -309,162 +573,80 @@ export const DashboardPage: React.FC = () => {
                     variant="secondary"
                     size="sm"
                     onClick={() => handleContinueSession(session.id)}
-                    className="w-full flex items-center justify-center gap-2 text-xs bg-white/5 text-white hover:bg-white/10 focus-button cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 text-xs bg-slate-100 text-slate-800 hover:bg-slate-200 border-slate-200 cursor-pointer"
                   >
-                    <Play className="w-3.5 h-3.5 text-[#38BDF8]" />
-                    <span>Continue Learning</span>
+                    <Play className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Resume Session</span>
                   </Button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-8 rounded-2xl focus-card border border-white/10 text-center space-y-2">
-            <BookOpen className="w-8 h-8 text-white/40 mx-auto" />
-            <p className="text-sm font-medium text-white">No active learning sessions yet</p>
-            <p className="text-xs text-white/50">Enter a question or topic above to start your first adaptive learning loop!</p>
+          <div className="p-8 rounded-3xl bg-white border border-slate-200/80 text-center space-y-3 shadow-sm">
+            <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
+            <p className="text-sm font-bold text-slate-800">No active learning sessions yet</p>
+            <p className="text-xs text-slate-500">
+              Enter any question or topic in the search bar above to create your first adaptive learning node!
+            </p>
           </div>
         )}
       </section>
 
-      {/* QUICK LEARNING TOOLS DOCK */}
-      <section className="space-y-4 relative z-10">
-        <h2 className="text-2xl font-display font-bold text-white">Learning Tools & Exams</h2>
+      {/* SECTION 4: QUICK TOOLS DOCK */}
+      <section className="space-y-4 relative z-10 pt-2">
+        <h2 className="text-2xl font-display font-bold text-slate-900">Quick Tools & Practice</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button
             type="button"
             onClick={() => navigate('/app/exam')}
-            className="p-5 rounded-2xl focus-card border border-white/10 text-left flex items-center justify-between group cursor-pointer"
+            className="p-5 rounded-3xl bg-white border border-slate-200/80 text-left flex items-center justify-between group hover:border-emerald-300 transition-all cursor-pointer shadow-sm hover:shadow-md"
           >
             <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded-xl bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E]">
+              <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
                 <FileCheck className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white group-hover:text-[#22C55E] transition-colors">Timed Exam (3 Lives)</p>
-                <p className="text-xs text-white/50">Score &ge; 80% to earn certificates</p>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Timed Exam (3 Hearts)</p>
+                <p className="text-xs text-slate-500">Score &ge; 60% for verified certificate</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/app/certificates')}
-            className="p-5 rounded-2xl focus-card border border-white/10 text-left flex items-center justify-between group cursor-pointer"
+            className="p-5 rounded-3xl bg-white border border-slate-200/80 text-left flex items-center justify-between group hover:border-blue-300 transition-all cursor-pointer shadow-sm hover:shadow-md"
           >
             <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded-xl bg-[#38BDF8]/15 border border-[#38BDF8]/30 text-[#38BDF8]">
+              <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
                 <Award className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white group-hover:text-[#38BDF8] transition-colors">My Certificates</p>
-                <p className="text-xs text-white/50">View & download verified PDFs</p>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">My Certificates</p>
+                <p className="text-xs text-slate-500">Unique ID verified credentials</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/app/learning-map')}
-            className="p-5 rounded-2xl focus-card border border-white/10 text-left flex items-center justify-between group cursor-pointer"
+            className="p-5 rounded-3xl bg-white border border-slate-200/80 text-left flex items-center justify-between group hover:border-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-md"
           >
             <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B]">
+              <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
                 <Compass className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white group-hover:text-[#F59E0B] transition-colors">Visual Concept Map</p>
-                <p className="text-xs text-white/50">Explore prerequisites & topic nodes</p>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">Visual Concept Map</p>
+                <p className="text-xs text-slate-500">Explore prerequisite graph nodes</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
           </button>
-        </div>
-      </section>
-
-      {/* MASTERY METRICS & INSIGHTS */}
-      <section className="space-y-4 relative z-10">
-        <h2 className="text-2xl font-display font-bold text-white">Learning Insights</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="focus-card rounded-2xl p-5 border border-white/10 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60 uppercase font-semibold">Active Concepts</span>
-              <BookOpen className="w-4 h-4" style={{ color: theme.primary }} />
-            </div>
-            <p className="text-3xl font-bold text-white font-display">5</p>
-            <p className="text-xs text-white/60">Active in concept graph</p>
-          </div>
-
-          <div className="focus-card rounded-2xl p-5 border border-white/10 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60 uppercase font-semibold">Mastered Concepts</span>
-              <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
-            </div>
-            <p className="text-3xl font-bold text-white font-display">3</p>
-            <p className="text-xs text-[#22C55E]">Above 85% mastery score</p>
-          </div>
-
-          <div className="focus-card rounded-2xl p-5 border border-white/10 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60 uppercase font-semibold">Strengthening</span>
-              <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-            </div>
-            <p className="text-3xl font-bold text-white font-display">2</p>
-            <p className="text-xs text-[#F59E0B]">LEFT JOIN & Foreign Keys</p>
-          </div>
-
-          <div className="focus-card rounded-2xl p-5 border border-white/10 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60 uppercase font-semibold">Study Streak</span>
-              <Flame className="w-4 h-4 text-[#EF4444]" />
-            </div>
-            <p className="text-3xl font-bold text-white font-display">3 Days</p>
-            <p className="text-xs text-[#EF4444]">Active Streak 🔥</p>
-          </div>
-        </div>
-      </section>
-
-      {/* RECOMMENDED NEXT STEPS */}
-      <section className="space-y-4 relative z-10">
-        <h2 className="text-2xl font-display font-bold text-white">Recommended Next Steps</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div
-            onClick={() => handleStartJourney(undefined, "Continue improving LEFT JOIN")}
-            className="focus-card rounded-2xl p-5 border border-white/10 hover:border-white/30 transition-all cursor-pointer space-y-2 group"
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" style={{ color: theme.primary }} />
-              <span className="text-xs font-bold text-white group-hover:text-[#38BDF8]">Recommendation</span>
-            </div>
-            <p className="text-sm font-semibold text-white">"Continue improving LEFT JOIN"</p>
-            <p className="text-xs text-white/60">Strengthen unmatched row behavior with real-world scenarios.</p>
-          </div>
-
-          <div
-            onClick={() => handleStartJourney(undefined, "Practice recursion base cases")}
-            className="focus-card rounded-2xl p-5 border border-white/10 hover:border-white/30 transition-all cursor-pointer space-y-2 group"
-          >
-            <div className="flex items-center gap-2">
-              <Brain className="w-4 h-4 text-[#A855F7]" />
-              <span className="text-xs font-bold text-white group-hover:text-[#A855F7]">Recommendation</span>
-            </div>
-            <p className="text-sm font-semibold text-white">"Practice recursion base cases"</p>
-            <p className="text-xs text-white/60">Prevent stack overflow with base condition logic.</p>
-          </div>
-
-          <div
-            onClick={() => handleStartJourney(undefined, "Review foreign key relationships")}
-            className="focus-card rounded-2xl p-5 border border-white/10 hover:border-white/30 transition-all cursor-pointer space-y-2 group"
-          >
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-[#22C55E]" />
-              <span className="text-xs font-bold text-white group-hover:text-[#22C55E]">Recommendation</span>
-            </div>
-            <p className="text-sm font-semibold text-white">"Review foreign key relationships"</p>
-            <p className="text-xs text-white/60">Solidify database primary key to foreign key links.</p>
-          </div>
         </div>
       </section>
 

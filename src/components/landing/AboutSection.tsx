@@ -31,7 +31,7 @@ export const AboutSection: React.FC = () => {
           Generic answers <span className="font-sans text-[#8B94A3] font-normal">don't build</span>{' '}
           <span className="italic text-white/60">deep mastery.</span>{' '}
           <br className="hidden md:inline" />
-          <span className="italic text-white/60">Aether diagnoses</span>{' '}
+          <span className="italic text-white/60">MetaMind diagnoses</span>{' '}
           <span className="font-sans text-[#8B94A3] font-normal">the hidden</span>{' '}
           <span className="italic text-white/60">prerequisites you need.</span>
         </motion.h2>
@@ -42,7 +42,7 @@ export const AboutSection: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="mt-8 text-sm md:text-base text-white/70 max-w-3xl leading-relaxed font-sans"
         >
-          Traditional tools answer questions without diagnosing missing prerequisite knowledge or mistake patterns. Aether transforms every doubt into a structured adaptive loop: <strong className="text-white">Discover → Assess → Analyze → Personalize → Master.</strong>
+          Traditional tools answer questions without diagnosing missing prerequisite knowledge or mistake patterns. MetaMind transforms every doubt into a structured adaptive loop: <strong className="text-white">Discover → Assess → Analyze → Personalize → Master.</strong>
         </motion.p>
       </div>
     </section>

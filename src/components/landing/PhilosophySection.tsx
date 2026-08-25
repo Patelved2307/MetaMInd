@@ -53,7 +53,7 @@ export const PhilosophySection: React.FC = () => {
                 Tailored for every learner
               </p>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                Whether you are a college student breaking down SQL JOINs, an exam candidate prioritizing weak topics, or a professional learning technical skills, Aether matches explanation complexity to your demonstrated comprehension level.
+                Whether you are a college student breaking down SQL JOINs, an exam candidate prioritizing weak topics, or a professional learning technical skills, MetaMind matches explanation complexity to your demonstrated comprehension level.
               </p>
             </div>
 
@@ -66,7 +66,7 @@ export const PhilosophySection: React.FC = () => {
                 Diagnose, Gamify & Progress
               </p>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                Making learning progress visible and rewarding. Aether updates your concept mastery graph, XP, streaks, ranks (Bronze → Diamond), and issues verifiable certificates upon completing subject mastery.
+                Making learning progress visible and rewarding. MetaMind updates your concept mastery graph, XP, streaks, ranks (Bronze → Diamond), and issues verifiable certificates upon completing subject mastery.
               </p>
             </div>
           </motion.div>

@@ -1,6 +1,6 @@
 import type { ExamDifficulty, ExamQuestion, IssuedCertificate } from './exam.types';
 
-const CERTIFICATES_STORAGE_KEY = 'aether_user_certificates_v1';
+const CERTIFICATES_STORAGE_KEY = 'metamind_user_certificates_v1';
 
 export const examService = {
   getExamQuestions(topic: string, difficulty: ExamDifficulty): ExamQuestion[] {
@@ -224,7 +224,7 @@ export const examService = {
       },
       {
         id: 'gen_5',
-        question: `What passing score is required to earn a verified certificate in Aether Learn?`,
+        question: `What passing score is required to earn a verified certificate in MetaMind?`,
         options: ['80% or higher', '50% or higher', '60% or higher', '100% only'],
         correctAnswer: '80% or higher',
         explanation: 'Certificates require demonstrating at least 80% mastery score on timed exams.',

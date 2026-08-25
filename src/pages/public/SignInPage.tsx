@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '@/features/auth';
 import { Button } from '@/components/ui/Button';
@@ -16,10 +16,7 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export const SignInPage: React.FC = () => {
   const { signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  const from = (location.state as any)?.from?.pathname || '/app/dashboard';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -78,7 +75,7 @@ export const SignInPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate(from, { replace: true });
+      navigate('/onboarding', { replace: true });
     } catch (err: any) {
       setErrors({ auth: err.message || 'Invalid credentials. Please check your email and password.' });
     } finally {
@@ -117,10 +114,7 @@ export const SignInPage: React.FC = () => {
         {/* Top Bar with Back Button & Brand Logo */}
         <div className="relative z-10 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-[#8DD3FF]/15 border border-[#8DD3FF]/30 flex items-center justify-center liquid-glass group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 text-[#8DD3FF]" />
-            </div>
-            <span className="font-display text-2xl text-white font-normal tracking-tight">Aether Learn</span>
+            <img src="/assets/brand/metamind_logo_white.png" alt="MetaMind" className="h-10 w-auto object-contain" />
           </Link>
 
           <Link

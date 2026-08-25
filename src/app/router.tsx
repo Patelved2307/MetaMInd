@@ -23,6 +23,7 @@ import { ExamPage } from '@/pages/app/ExamPage';
 import { LibraryPage } from '@/pages/app/LibraryPage';
 import { AchievementsPage } from '@/pages/app/AchievementsPage';
 import { CertificatesPage } from '@/pages/app/CertificatesPage';
+import { GroupStudyPage } from '@/pages/app/GroupStudyPage';
 import { ProfilePage } from '@/pages/app/ProfilePage';
 
 export const router = createBrowserRouter([
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/app/dashboard" replace /> },
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'learn', element: <LearnPage /> },
+          { path: 'study-room', element: <GroupStudyPage /> },
           { path: 'learning-map', element: <LearningMapPage /> },
           { path: 'assessment', element: <AssessmentPage /> },
           { path: 'analysis', element: <AnalysisPage /> },
