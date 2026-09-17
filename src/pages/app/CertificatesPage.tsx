@@ -13,11 +13,23 @@ import {
   Sparkles,
   Share2,
   Eye,
+  Printer,
+  Download,
 } from 'lucide-react';
+import {
+  generateCertificateHtml,
+  downloadCertificatePng,
+  getRegisteredUserName,
+} from '@/components/ui/GeometricAchievementCertificate';
 
 export const CertificatesPage: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+
+  const registeredName =
+    profile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    getRegisteredUserName();
 
   const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
   const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
@@ -34,6 +46,24 @@ export const CertificatesPage: React.FC = () => {
 
   const handleOpenDesignModal = (cert: IssuedCertificate) => {
     setActiveCertModal(cert);
+  };
+
+  const handleQuickDownload = (cert: IssuedCertificate) => {
+    const windowPrint = window.open('', '_blank');
+    if (!windowPrint) return;
+    windowPrint.document.open();
+    windowPrint.document.write(generateCertificateHtml(cert, registeredName));
+    windowPrint.document.close();
+    windowPrint.focus();
+    setTimeout(() => {
+      windowPrint.print();
+    }, 600);
+  };
+
+  const handleQuickDownloadPng = async (cert: IssuedCertificate) => {
+    const safeTopic = (cert.topic || 'certificate').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const safeName = registeredName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    await downloadCertificatePng(registeredName, `certificate-${safeName}-${safeTopic}.png`);
   };
 
   return (
@@ -102,8 +132,8 @@ export const CertificatesPage: React.FC = () => {
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs font-mono">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Student Recipient:</span>
-                  <span className="text-slate-900 font-bold">{cert.studentName}</span>
+                  <span className="text-slate-500">Registered Student:</span>
+                  <span className="text-slate-900 font-bold">{registeredName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Difficulty Mode:</span>
@@ -122,9 +152,13 @@ export const CertificatesPage: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => alert(`Share URL: https://metamind.app/verify/${cert.verificationCode}`)}
+                    onClick={() => {
+                      const url = `${window.location.origin}/app/certificates?code=${cert.verificationCode}`;
+                      navigator.clipboard.writeText(url);
+                      alert(`Verification link copied: ${url}`);
+                    }}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer transition-all"
-                    title="Share Link"
+                    title="Copy Share Link"
                   >
                     <Share2 className="w-3.5 h-3.5" />
                   </button>
@@ -136,7 +170,28 @@ export const CertificatesPage: React.FC = () => {
                     className="text-xs bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200 cursor-pointer shadow-xs font-semibold"
                     leftIcon={<Eye className="w-4 h-4 text-blue-600" />}
                   >
-                    View Templates
+                    View
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleQuickDownloadPng(cert)}
+                    className="text-xs bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200 cursor-pointer shadow-xs font-semibold"
+                    leftIcon={<Download className="w-3.5 h-3.5 text-blue-600" />}
+                  >
+                    PNG
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleQuickDownload(cert)}
+                    className="text-xs text-white font-semibold cursor-pointer shadow-xs"
+                    style={{ backgroundColor: '#353B97' }}
+                    leftIcon={<Printer className="w-3.5 h-3.5" />}
+                  >
+                    PDF
                   </Button>
                 </div>
               </div>
@@ -175,6 +230,7 @@ export const CertificatesPage: React.FC = () => {
         isOpen={!!activeCertModal}
         onClose={() => setActiveCertModal(null)}
         certificate={activeCertModal}
+        userName={registeredName}
         primaryColor={theme.primary}
       />
     </div>

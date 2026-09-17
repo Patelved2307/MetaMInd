@@ -102,12 +102,23 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Step 2: Start Diagnostic Assessment
   const startAssessment = async (): Promise<AssessmentQuestion[]> => {
-    if (!activeSession) throw new Error('No active learning session');
     setLoading(true);
     setError(null);
     try {
       setLoadingMessage('Preparing diagnostic assessment questions...');
-      const questions = await generateDiagnosticAssessment(activeSession.topic);
+      let session = activeSession;
+      if (!session) {
+        const existing = await learningService.getUserSessions(userId);
+        if (existing.length > 0) {
+          session = existing[0];
+          setActiveSession(session);
+        } else {
+          session = await startLearningJourney('SQL JOINs & Relational Algebra');
+          setActiveSession(session);
+        }
+      }
+
+      const questions = await generateDiagnosticAssessment(session.topic);
       setAssessmentQuestions(questions);
       return questions;
     } catch (err: any) {

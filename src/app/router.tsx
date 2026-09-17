@@ -12,8 +12,8 @@ import { SignUpPage } from '@/pages/public/SignUpPage';
 import { OnboardingPage } from '@/pages/app/OnboardingPage';
 
 // Authenticated app pages
+import { ChatbotWorkspacePage } from '@/pages/app/ChatbotWorkspacePage';
 import { DashboardPage } from '@/pages/app/DashboardPage';
-import { LearnPage } from '@/pages/app/LearnPage';
 import { LearningMapPage } from '@/pages/app/LearningMapPage';
 import { AssessmentPage } from '@/pages/app/AssessmentPage';
 import { AnalysisPage } from '@/pages/app/AnalysisPage';
@@ -25,6 +25,7 @@ import { AchievementsPage } from '@/pages/app/AchievementsPage';
 import { CertificatesPage } from '@/pages/app/CertificatesPage';
 import { GroupStudyPage } from '@/pages/app/GroupStudyPage';
 import { ProfilePage } from '@/pages/app/ProfilePage';
+import { StudentCommitteePage } from '@/pages/app/StudentCommitteePage';
 
 export const router = createBrowserRouter([
   {
@@ -47,12 +48,17 @@ export const router = createBrowserRouter([
     path: '/app',
     element: <ProtectedRoute requireOnboardingCompleted={false} />,
     children: [
+      // Primary Landing for Registered Students: Standalone MetaMind AI Chatbot
+      { index: true, element: <Navigate to="/app/chat" replace /> },
+      { path: 'chat', element: <ChatbotWorkspacePage /> },
+
+      // Main Analytics, Exams, and Learning Management Dashboard Layout
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to="/app/dashboard" replace /> },
           { path: 'dashboard', element: <DashboardPage /> },
-          { path: 'learn', element: <LearnPage /> },
+          { path: 'learn', element: <Navigate to="/app/chat" replace /> },
+          { path: 'committee', element: <StudentCommitteePage /> },
           { path: 'study-room', element: <GroupStudyPage /> },
           { path: 'learning-map', element: <LearningMapPage /> },
           { path: 'assessment', element: <AssessmentPage /> },

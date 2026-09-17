@@ -268,11 +268,35 @@ export const examService = {
     const stored = localStorage.getItem(CERTIFICATES_STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {
         // ignore
       }
     }
-    return [];
+    let registeredName = 'Ved Patel';
+    try {
+      const cached = localStorage.getItem('active_user_profile');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.full_name?.trim()) registeredName = parsed.full_name.trim();
+      }
+    } catch {
+      // ignore
+    }
+
+    const sampleCert: IssuedCertificate = {
+      id: 'cert_registered_user',
+      userId: 'demo',
+      studentName: registeredName,
+      topic: 'Full-Stack Software Architecture',
+      subject: 'Computer Science',
+      difficulty: 'hard',
+      scorePercent: 96,
+      issuedAt: '2023-02-06T10:00:00.000Z',
+      verificationCode: 'ATH-WS2023-BEST',
+      avatarThemeName: 'Cyberpunk Neon',
+    };
+    return [sampleCert];
   },
 };

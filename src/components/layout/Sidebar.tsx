@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth';
 import {
   LayoutDashboard,
-  BookOpen,
   Network,
   Code,
   FileCheck,
@@ -16,6 +15,10 @@ import {
   Menu,
   X,
   LogOut,
+  Bot,
+  ArrowLeft,
+  Brain,
+  GraduationCap,
 } from 'lucide-react';
 import { generateAvatarUrl, getAvatarPresetByUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 
@@ -28,14 +31,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
-  { name: 'Learn & AI Hub', path: '/app/learn', icon: BookOpen },
+  { name: 'Student Committee', path: '/app/committee', icon: GraduationCap, badge: 'Hub' },
   { name: 'Group Study Room', path: '/app/study-room', icon: Users, badge: 'Live' },
-  { name: 'Learning Map', path: '/app/learning-map', icon: Network },
+  { name: 'Diagnostic Assessment', path: '/app/assessment', icon: Brain, badge: 'AI' },
+  { name: 'Timed Exam Hub', path: '/app/exam', icon: FileCheck, badge: 'New' },
   { name: 'Practice & Puzzles', path: '/app/practice', icon: Code },
-  { name: 'Timed Exam', path: '/app/exam', icon: FileCheck },
-  { name: 'Library', path: '/app/library', icon: Library },
-  { name: 'Achievements', path: '/app/achievements', icon: Award },
+  { name: 'Learning Map', path: '/app/learning-map', icon: Network },
   { name: 'Certificates', path: '/app/certificates', icon: ShieldCheck },
+  { name: 'Achievements', path: '/app/achievements', icon: Award },
+  { name: 'Library', path: '/app/library', icon: Library },
   { name: 'Profile & Theme', path: '/app/profile', icon: User },
 ];
 
@@ -91,15 +95,34 @@ export const Sidebar: React.FC = () => {
       >
         <div className="p-5 overflow-y-auto">
           {/* Brand Header */}
-          <div className="flex flex-col gap-1 pb-5 border-b border-slate-200/80">
+          <div className="flex flex-col gap-1 pb-4 border-b border-slate-200/80">
             <img src="/assets/brand/metamind_logo.png" alt="MetaMind Logo" className="h-10 w-auto object-contain object-left" />
             <p className="text-[10px] font-mono font-bold tracking-wider pl-0.5" style={{ color: theme.primary }}>
               {theme.themeName}
             </p>
           </div>
 
+          {/* DEDICATED BACK TO METAMIND AI BUTTON */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/app/chat');
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-white hover:opacity-95 group"
+              style={{ backgroundColor: '#353B97' }}
+            >
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-amber-300" />
+                <span>Back to MetaMind.ai</span>
+              </div>
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+
           {/* Navigation Links */}
-          <nav className="mt-6 space-y-1">
+          <nav className="mt-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (

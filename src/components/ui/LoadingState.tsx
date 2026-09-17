@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import LoaderGrid from '@/components/ui/loader-grid';
 import { cn } from '@/lib/utils';
 
 export interface LoadingStateProps {
@@ -13,16 +13,16 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   className,
   size = 'md',
 }) => {
-  const iconSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
+  const loaderSizes = {
+    sm: '0.65em',
+    md: '1em',
+    lg: '1.4em',
   };
 
   return (
-    <div className={cn('flex flex-col items-center justify-center p-8 text-center space-y-3', className)}>
-      <Loader2 className={cn('animate-spin text-[#8DD3FF]', iconSizes[size])} />
-      {message && <p className="text-xs font-medium text-[#8B94A3] animate-pulse">{message}</p>}
+    <div className={cn('flex flex-col items-center justify-center p-8 text-center space-y-4', className)}>
+      <LoaderGrid size={loaderSizes[size]} />
+      {message && <p className="text-xs font-medium text-slate-500 animate-pulse">{message}</p>}
     </div>
   );
 };

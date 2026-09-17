@@ -19,6 +19,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BadgeCelebrationModal } from '@/components/ui/BadgeCelebrationModal';
 
 export const ExamPage: React.FC = () => {
   const { activeSession } = useLearning();
@@ -48,6 +49,7 @@ export const ExamPage: React.FC = () => {
   const [isPassed, setIsPassed] = useState(false);
   const [issuedCode, setIssuedCode] = useState<string | null>(null);
   const [speedBonusBanner, setSpeedBonusBanner] = useState<string | null>(null);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
 
   // Difficulty setup
   const handleStartExam = (selectedDiff: ExamDifficulty) => {
@@ -134,6 +136,7 @@ export const ExamPage: React.FC = () => {
     setIsPassed(passed);
 
     if (passed) {
+      setIsCelebrationOpen(true);
       const cert = examService.issueCertificate(
         user?.id || 'demo_user',
         studentName,
@@ -450,6 +453,17 @@ export const ExamPage: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* CELEBRATORY BADGE UNLOCK CONFETTI MODAL */}
+      <BadgeCelebrationModal
+        isOpen={isCelebrationOpen}
+        onClose={() => setIsCelebrationOpen(false)}
+        userName={studentName}
+        badgeName={`${difficulty.toUpperCase()} Assessment Master`}
+        badgeDescription={`You scored ${Math.round((correctCount / (questions.length || 5)) * 100)}% on ${topicName}! Your official verified credential is now available.`}
+        xpEarned={difficulty === 'hard' ? 300 : difficulty === 'medium' ? 200 : 150}
+        onViewCertificates={() => navigate('/app/certificates')}
+      />
     </div>
   );
 };

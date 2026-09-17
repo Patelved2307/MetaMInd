@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
 import { Badge } from '@/components/ui/Badge';
 import {
-  Sparkles,
   ArrowRight,
   CheckCircle2,
   XCircle,
@@ -15,6 +14,7 @@ import {
   Brain,
   Check,
 } from 'lucide-react';
+import LoaderGrid from '@/components/ui/loader-grid';
 
 export const AssessmentPage: React.FC = () => {
   const {
@@ -40,10 +40,10 @@ export const AssessmentPage: React.FC = () => {
 
   // Initialize questions if missing
   useEffect(() => {
-    if (assessmentQuestions.length === 0 && activeSession) {
-      startAssessment();
+    if (assessmentQuestions.length === 0) {
+      startAssessment().catch((e) => console.error('Assessment load err:', e));
     }
-  }, [assessmentQuestions, activeSession, startAssessment]);
+  }, [assessmentQuestions.length]);
 
   const currentQuestion = assessmentQuestions[currentIndex];
   const totalQuestions = assessmentQuestions.length || 4;
@@ -83,8 +83,8 @@ export const AssessmentPage: React.FC = () => {
 
   if (loading && assessmentQuestions.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 space-y-4">
-        <Sparkles className="w-8 h-8 animate-spin" style={{ color: theme.primary }} />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 space-y-6">
+        <LoaderGrid size="1.2em" />
         <p className="text-sm font-medium text-slate-700 animate-pulse">
           {loadingMessage || 'Generating diagnostic questions...'}
         </p>
