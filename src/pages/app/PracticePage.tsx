@@ -126,8 +126,7 @@ export const PracticePage: React.FC = () => {
               onClick={handlePracticeSubmit}
               disabled={!selectedAnswer}
               isLoading={loading}
-              className="font-bold cursor-pointer border-none shadow-md hover:scale-105 text-white"
-              style={{ backgroundColor: theme.primary }}
+              className="font-bold cursor-pointer shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl"
               rightIcon={<Check className="w-4 h-4" />}
             >
               Submit Practice Answer
@@ -183,8 +182,7 @@ export const PracticePage: React.FC = () => {
               variant="primary"
               size="lg"
               onClick={handleReturnToDashboard}
-              className="font-bold cursor-pointer shadow-md px-8 py-3.5 border-none hover:scale-105 text-white"
-              style={{ backgroundColor: theme.primary }}
+              className="font-bold cursor-pointer shadow-sm px-8 py-3.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl"
               rightIcon={<ArrowRight className="w-5 h-5" />}
             >
               Return to Dashboard

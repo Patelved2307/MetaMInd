@@ -26,14 +26,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#8DD3FF]/40 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none rounded-lg';
+    const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none rounded-xl';
 
     const variants = {
-      primary: 'bg-[#8DD3FF] text-[#05070A] hover:bg-[#a6deff] active:bg-[#7bc8ff] font-semibold shadow-sm shadow-[#8DD3FF]/10',
-      secondary: 'bg-[#111722] text-[#F4F5F7] border border-white/10 hover:bg-[#18202f] hover:border-white/20 active:bg-[#0c111a]',
-      outline: 'bg-transparent text-[#F4F5F7] border border-white/15 hover:bg-white/5 active:bg-white/10',
-      ghost: 'bg-transparent text-[#8B94A3] hover:text-[#F4F5F7] hover:bg-white/5 active:bg-white/10',
-      glass: 'liquid-glass text-[#F4F5F7] hover:bg-white/[0.04] transition-colors',
+      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 font-semibold shadow-sm hover:shadow transition-all',
+      secondary: 'bg-slate-100 text-slate-800 border border-slate-200 hover:bg-slate-200 active:bg-slate-300 font-medium',
+      outline: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100',
+      ghost: 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200',
+      glass: 'bg-white/80 backdrop-blur-md text-slate-800 border border-slate-200 hover:bg-white',
     };
 
     const sizes = {

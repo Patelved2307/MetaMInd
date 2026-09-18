@@ -31,7 +31,7 @@ export const Dialog: React.FC<DialogProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-[#05070A]/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
           />
 
           {/* Dialog Container */}
@@ -41,20 +41,20 @@ export const Dialog: React.FC<DialogProps> = ({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={cn(
-              'relative z-10 w-full max-w-lg bg-[#0B0F14] border border-white/10 rounded-xl p-6 shadow-2xl text-[#F4F5F7]',
+              'relative z-10 w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xl text-slate-900',
               className
             )}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div>
-                {title && <h2 className="text-lg font-semibold text-[#F4F5F7]">{title}</h2>}
-                {description && <p className="mt-1 text-xs text-[#8B94A3]">{description}</p>}
+                {title && <h2 className="text-base sm:text-lg font-bold text-slate-900 font-display">{title}</h2>}
+                {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="p-1.5 h-auto text-[#8B94A3] hover:text-[#F4F5F7]"
+                className="p-1.5 h-auto text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </Button>

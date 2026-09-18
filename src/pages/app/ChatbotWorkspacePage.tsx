@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import {
   chatService,
@@ -9,28 +9,41 @@ import type {
   ChatSession,
   ChatMessage,
   PluginId,
+  ChatPlugin,
+  ChatAttachment,
 } from '@/features/chat/chat.types';
 import { downloadStudyGuidePdf } from '@/features/chat/studyGuidePdf';
 import { generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
+import { FilePreviewModal } from '@/components/chat/FilePreviewModal';
+import { PluginMarketplaceModal } from '@/components/chat/PluginMarketplaceModal';
+import { ShareChatModal } from '@/components/chat/ShareChatModal';
 import {
-  Plus,
   Search,
-  HelpCircle,
   LayoutDashboard,
   Trash2,
-  Bot,
   PanelLeftClose,
   PanelLeft,
   FileDown,
-  Sparkles,
-  ArrowUpRight,
+  ArrowUp,
+  Paperclip,
+  Folder,
+  SquarePen,
   Check,
+  Copy,
   Brain,
-  MessageSquare,
+  MoreVertical,
+  Pin,
+  Edit2,
+  Share2,
+  X,
+  Eye,
+  FileText,
+  Image as ImageIcon,
+  UploadCloud,
+  Puzzle,
+  Download,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import LoaderGrid from '@/components/ui/loader-grid';
-import { PromptInputBox } from '@/components/ui/ai-prompt-box';
 
 function renderInlineFormatted(str: string) {
   const parts = str.split(/(\*\*.*?\*\*|`.*?`)/g);
@@ -79,7 +92,7 @@ const RenderMarkdownSection: React.FC<{ text: string }> = ({ text }) => {
           return (
             <div
               key={pIdx}
-              className="overflow-x-auto my-3 rounded-xl border border-slate-200 shadow-sm"
+              className="overflow-x-auto my-3 rounded-xl border border-slate-200 shadow-2xs"
             >
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -119,40 +132,62 @@ const RenderMarkdownSection: React.FC<{ text: string }> = ({ text }) => {
           return (
             <blockquote
               key={pIdx}
-              className="my-3 pl-3.5 py-2 border-l-3 border-indigo-500 bg-indigo-50/50 rounded-r-xl text-slate-800 italic text-xs leading-relaxed"
+              className="my-3 pl-3.5 py-1 border-l-3 border-indigo-500 bg-indigo-50/50 rounded-r-xl text-slate-700 italic text-xs leading-relaxed"
             >
               {renderInlineFormatted(quoteText)}
             </blockquote>
           );
         }
 
-        // Header 3
+        // Headings
         if (trimmed.startsWith('### ')) {
-          return (
-            <h3
-              key={pIdx}
-              className="text-sm font-bold text-slate-900 mt-4 mb-1.5 flex items-center gap-1.5"
-            >
-              {renderInlineFormatted(trimmed.replace(/^###\s*/, ''))}
-            </h3>
-          );
-        }
-
-        // Header 4
-        if (trimmed.startsWith('#### ')) {
           return (
             <h4
               key={pIdx}
-              className="text-xs font-bold text-slate-800 uppercase tracking-wider mt-3 mb-1"
+              className="text-xs font-bold uppercase tracking-wider text-slate-900 mt-4 mb-1.5 flex items-center gap-1.5"
             >
-              {renderInlineFormatted(trimmed.replace(/^####\s*/, ''))}
+              {renderInlineFormatted(trimmed.replace('### ', ''))}
             </h4>
           );
         }
+        if (trimmed.startsWith('#### ')) {
+          return (
+            <h5
+              key={pIdx}
+              className="text-xs font-semibold text-indigo-700 mt-3 mb-1"
+            >
+              {renderInlineFormatted(trimmed.replace('#### ', ''))}
+            </h5>
+          );
+        }
 
-        // Standard paragraph
+        // Bullet list
+        if (
+          trimmed
+            .split('\n')
+            .every((l) => l.trim().startsWith('•') || l.trim().startsWith('-'))
+        ) {
+          const listItems = trimmed
+            .split('\n')
+            .map((l) => l.replace(/^[•-]\s*/, ''));
+          return (
+            <ul key={pIdx} className="my-2 space-y-1 text-xs text-slate-700 pl-1">
+              {listItems.map((li, liIdx) => (
+                <li key={liIdx} className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                  <span>{renderInlineFormatted(li)}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        // Regular paragraph
         return (
-          <p key={pIdx} className="whitespace-pre-wrap leading-relaxed">
+          <p
+            key={pIdx}
+            className="text-xs sm:text-sm text-slate-700 leading-relaxed my-2"
+          >
             {renderInlineFormatted(trimmed)}
           </p>
         );
@@ -161,37 +196,52 @@ const RenderMarkdownSection: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-const RenderFormattedMessage: React.FC<{ content: string; isUser: boolean }> = ({
-  content,
-  isUser,
-}) => {
-  if (isUser) {
-    return <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{content}</div>;
-  }
-
-  // Split code blocks
+const FormattedAiContent: React.FC<{ content: string }> = ({ content }) => {
   const parts = content.split(/(```[\s\S]*?```)/g);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopyCode = (code: string, index: number) => {
+    navigator.clipboard.writeText(code);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
   return (
-    <div className="space-y-3.5 text-sm text-slate-800 leading-relaxed font-sans">
+    <div className="space-y-2">
       {parts.map((part, index) => {
         if (part.startsWith('```') && part.endsWith('```')) {
-          const lines = part.slice(3, -3).trim().split('\n');
-          const firstLine = lines[0].trim();
-          const hasLang = /^[a-zA-Z0-9_-]+$/.test(firstLine);
-          const lang = hasLang ? firstLine : 'code';
-          const code = hasLang ? lines.slice(1).join('\n') : lines.join('\n');
+          const firstLineEnd = part.indexOf('\n');
+          const language = part.slice(3, firstLineEnd).trim() || 'code';
+          const code = part.slice(firstLineEnd + 1, -3);
 
           return (
             <div
               key={index}
-              className="rounded-xl overflow-hidden border border-slate-800 bg-[#14171F] text-slate-100 shadow-md my-3 text-left"
+              className="my-3 rounded-2xl overflow-hidden border border-slate-800 bg-[#0F172A] shadow-md text-white font-mono text-xs"
             >
-              <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#1C202B] border-b border-slate-800 text-[11px] font-mono text-slate-400">
-                <span className="uppercase font-bold tracking-wider">{lang}</span>
-                <span className="text-[10px] text-slate-400">Snippet</span>
+              <div className="flex items-center justify-between px-4 py-2 bg-[#1E293B] border-b border-slate-700/80">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  {language}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopyCode(code, index)}
+                  className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  {copiedIndex === index ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy code</span>
+                    </>
+                  )}
+                </button>
               </div>
-              <pre className="p-4 font-mono text-xs overflow-x-auto selection:bg-indigo-500 selection:text-white">
+              <pre className="p-4 overflow-x-auto custom-scrollbar leading-relaxed text-slate-200">
                 <code>{code}</code>
               </pre>
             </div>
@@ -207,12 +257,13 @@ const RenderFormattedMessage: React.FC<{ content: string; isUser: boolean }> = (
 export const ChatbotWorkspacePage: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const registeredName =
     profile?.full_name?.trim() ||
     user?.user_metadata?.full_name?.trim() ||
     user?.email?.split('@')[0] ||
-    'Learner';
+    'Student';
 
   const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
   const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
@@ -220,14 +271,46 @@ export const ChatbotWorkspacePage: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activePlugin, setActivePlugin] = useState<PluginId>('concept-explainer');
+  const [activePlugin] = useState<PluginId>('concept-explainer');
+  const [installedPlugins, setInstalledPlugins] = useState<ChatPlugin[]>(() =>
+    chatService.getInstalledPlugins()
+  );
+
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<{ [msgId_qId: string]: number }>({});
 
-  // Clean layout sidebar toggle
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [inputMessage, setInputMessage] = useState('');
+  const selectedModel = 'MetaMind Neural Core';
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  // Modals & Menu States
+  const [isPluginStoreOpen, setIsPluginStoreOpen] = useState(false);
+  const [sharingSession, setSharingSession] = useState<ChatSession | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null);
+
+  // History 3-dots Menu & Inline Rename State
+  const [activeMenuSessionId, setActiveMenuSessionId] = useState<string | null>(null);
+  const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('down');
+  const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+
+  // Attachments in input composer
+  const [currentAttachments, setCurrentAttachments] = useState<ChatAttachment[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Projects
+  const projects = [
+    { id: 'db', name: 'Database Systems', count: '03' },
+    { id: 'dsa', name: 'Data Structures', count: '02' },
+    { id: 'web', name: 'Web Technology', count: '04' },
+    { id: 'net', name: 'Computer Networks', count: '03' },
+  ];
 
   // Load chat sessions
   useEffect(() => {
@@ -243,6 +326,26 @@ export const ChatbotWorkspacePage: React.FC = () => {
     }
   }, []);
 
+  // Handle incoming initial prompt or share import
+  useEffect(() => {
+    const state = location.state as { initialPrompt?: string } | null;
+    if (state?.initialPrompt) {
+      setInputMessage(state.initialPrompt);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  // Click outside to close 3-dots dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenuSessionId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
   // Auto-scroll chat to bottom
@@ -250,16 +353,38 @@ export const ChatbotWorkspacePage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeSession?.messages, isAiThinking]);
 
+  // Attachment Handler
+  const handleFilesAdded = (files: FileList | File[]) => {
+    const newAttachments: ChatAttachment[] = Array.from(files).map((file) => ({
+      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: file.name,
+      size: file.size,
+      type: file.type || 'application/octet-stream',
+      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+    }));
+    setCurrentAttachments((prev) => [...prev, ...newAttachments]);
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setCurrentAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const handleCreateNewChat = () => {
     const newSession = chatService.createSession(activePlugin);
     const updated = [newSession, ...sessions];
     setSessions(updated);
     chatService.saveSessions(updated);
     setActiveSessionId(newSession.id);
+    setInputMessage('');
+    setCurrentAttachments([]);
   };
 
+  // Chat Actions
   const handleDeleteChat = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
+    setActiveMenuSessionId(null);
+    if (!window.confirm('Are you sure you want to delete this discussion?')) return;
+
     const updated = sessions.filter((s) => s.id !== sessionId);
     if (updated.length === 0) {
       const fallback = chatService.createSession(activePlugin);
@@ -275,22 +400,75 @@ export const ChatbotWorkspacePage: React.FC = () => {
     }
   };
 
-  const handleSendMessage = (promptText: string, _files?: File[]) => {
-    if (!promptText.trim() || !activeSession || isAiThinking) return;
+  const handleTogglePin = (sessionId: string, newPinned: boolean) => {
+    const updated = chatService.pinSession(sessionId, newPinned);
+    setSessions(updated);
+    setActiveMenuSessionId(null);
+  };
 
+  const handleStartRename = (session: ChatSession) => {
+    setRenamingSessionId(session.id);
+    setRenameTitle(session.title);
+    setActiveMenuSessionId(null);
+  };
+
+  const handleSaveRename = (sessionId: string) => {
+    if (renameTitle.trim()) {
+      const updated = chatService.renameSession(sessionId, renameTitle.trim());
+      setSessions(updated);
+    }
+    setRenamingSessionId(null);
+  };
+
+  const handleOpenShare = (session: ChatSession) => {
+    setSharingSession(session);
+    setIsShareModalOpen(true);
+    setActiveMenuSessionId(null);
+  };
+
+  const handleExportChat = (session: ChatSession) => {
+    setActiveMenuSessionId(null);
+    let markdown = `# ${session.title}\n\n`;
+    markdown += `*Exported from MetaMind AI • Date: ${new Date(session.createdAt).toLocaleDateString()}*\n\n---\n\n`;
+    session.messages.forEach((msg) => {
+      const sender = msg.sender === 'user' ? 'Student' : 'MetaMind AI';
+      markdown += `### ${sender} (${new Date(msg.timestamp).toLocaleTimeString()})\n\n`;
+      if (msg.attachments && msg.attachments.length > 0) {
+        markdown += `📎 Attached Files: ${msg.attachments.map((a) => a.name).join(', ')}\n\n`;
+      }
+      markdown += `${msg.content}\n\n---\n\n`;
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${session.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_discussion.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Send Message with Attachments & Active Plugins
+  const handleSendMessage = (textToSend?: string) => {
+    const promptText = (textToSend !== undefined ? textToSend : inputMessage).trim();
+    if ((!promptText && currentAttachments.length === 0) || !activeSession || isAiThinking) return;
+
+    const messageAttachments = [...currentAttachments];
     const userMessage: ChatMessage = {
       id: `msg_user_${Date.now()}`,
       sender: 'user',
-      content: promptText.trim(),
+      content: promptText || (messageAttachments.length > 0 ? `Attached: ${messageAttachments.map((a) => a.name).join(', ')}` : ''),
       timestamp: new Date().toISOString(),
+      attachments: messageAttachments.length > 0 ? messageAttachments : undefined,
     };
 
     const updatedMessages = [...(activeSession.messages || []), userMessage];
     const sessionWithUser = {
       ...activeSession,
-      title: (!activeSession.messages || activeSession.messages.length === 0) 
-        ? promptText.replace(/^\[(Search|Think|Canvas):\s*/, '').slice(0, 32) 
-        : activeSession.title,
+      title:
+        !activeSession.messages || activeSession.messages.length === 0
+          ? promptText.slice(0, 32) || messageAttachments[0]?.name.slice(0, 32) || 'New Discussion'
+          : activeSession.title,
       messages: updatedMessages,
       updatedAt: new Date().toISOString(),
     };
@@ -298,10 +476,18 @@ export const ChatbotWorkspacePage: React.FC = () => {
     const updatedSessions = sessions.map((s) => (s.id === activeSession.id ? sessionWithUser : s));
     setSessions(updatedSessions);
     chatService.saveSessions(updatedSessions);
+    setInputMessage('');
+    setCurrentAttachments([]);
     setIsAiThinking(true);
 
     setTimeout(() => {
-      const { content, diagnostic } = chatService.generateCognitiveResponse(promptText, activePlugin);
+      const activeEnabledPlugins = installedPlugins.filter((p) => p.isEnabled).map((p) => p.id);
+      const { content, diagnostic } = chatService.generateCognitiveResponse(
+        promptText || 'Please analyze the attached document.',
+        activePlugin,
+        activeEnabledPlugins,
+        messageAttachments
+      );
 
       const aiMessage: ChatMessage = {
         id: `msg_ai_${Date.now()}`,
@@ -322,7 +508,14 @@ export const ChatbotWorkspacePage: React.FC = () => {
       setSessions(allSessions);
       chatService.saveSessions(allSessions);
       setIsAiThinking(false);
-    }, 850);
+    }, 800);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const handleSelectQuizAnswer = (msgId: string, qId: string, optIndex: number) => {
@@ -331,541 +524,802 @@ export const ChatbotWorkspacePage: React.FC = () => {
       [`${msgId}_${qId}`]: optIndex,
     };
     setQuizAnswers(newAnswers);
-
-    if (activeSession) {
-      const targetMsg = activeSession.messages.find((m) => m.id === msgId);
-      if (targetMsg?.diagnostic?.quickCheck) {
-        const questions = targetMsg.diagnostic.quickCheck;
-        let correctCount = 0;
-        let answeredCount = 0;
-
-        for (const q of questions) {
-          const ans = newAnswers[`${msgId}_${q.id}`];
-          if (ans !== undefined) {
-            answeredCount++;
-            if (ans === q.correctIndex) {
-              correctCount++;
-            }
-          }
-        }
-
-        const accuracy = answeredCount > 0 ? correctCount / answeredCount : 0;
-        const completionRatio = answeredCount / questions.length;
-        const rawScore = Math.round((accuracy * 0.75 + completionRatio * 0.25) * 100);
-        const updatedScore = Math.max(25, Math.min(100, rawScore));
-
-        let updatedLevel: 'Low' | 'Moderate' | 'High' | 'Mastery' = 'Low';
-        if (updatedScore >= 85) updatedLevel = 'Mastery';
-        else if (updatedScore >= 70) updatedLevel = 'High';
-        else if (updatedScore >= 50) updatedLevel = 'Moderate';
-
-        const updatedMessages = activeSession.messages.map((m) => {
-          if (m.id === msgId && m.diagnostic) {
-            return {
-              ...m,
-              diagnostic: {
-                ...m.diagnostic,
-                confidenceScore: updatedScore,
-                confidenceLevel: updatedLevel,
-              },
-            };
-          }
-          return m;
-        });
-
-        const updatedSession = {
-          ...activeSession,
-          messages: updatedMessages,
-          updatedAt: new Date().toISOString(),
-        };
-
-        const all = sessions.map((s) => (s.id === activeSession.id ? updatedSession : s));
-        setSessions(all);
-        chatService.saveSessions(all);
-      }
-    }
   };
 
-  const filteredSessions = sessions.filter((s) =>
-    s.title.toLowerCase().includes(searchQuery.toLowerCase())
+  // Group sessions by Pinned, Today, Yesterday, Older
+  const searchLower = searchQuery.toLowerCase().trim();
+  const filteredSessions = sessions.filter((s) => {
+    if (!searchLower) return true;
+    const titleMatch = (s.title || '').toLowerCase().includes(searchLower);
+    const messageMatch = s.messages.some((m) => m.content.toLowerCase().includes(searchLower));
+    return titleMatch || messageMatch;
+  });
+
+  const pinnedSessions = filteredSessions.filter((s) => !!s.pinned);
+  const unpinnedSessions = filteredSessions.filter((s) => !s.pinned);
+
+  const todayStr = new Date().toDateString();
+  const yesterdayStr = new Date(Date.now() - 86400000).toDateString();
+
+  const todaySessions = unpinnedSessions.filter(
+    (s) => new Date(s.createdAt).toDateString() === todayStr
+  );
+  const yesterdaySessions = unpinnedSessions.filter(
+    (s) => new Date(s.createdAt).toDateString() === yesterdayStr
+  );
+  const olderSessions = unpinnedSessions.filter(
+    (s) =>
+      new Date(s.createdAt).toDateString() !== todayStr &&
+      new Date(s.createdAt).toDateString() !== yesterdayStr
   );
 
-  // Creative Starter Cards (minimalist, human, inspiring)
-  const starterPrompts = [
-    {
-      title: 'Explain SQL Joins',
-      desc: 'Understand INNER, LEFT & RIGHT joins with clean diagrams',
-      prompt: 'Can you explain SQL Joins (INNER, LEFT, RIGHT, FULL) with clear practical table examples?',
-      tag: 'Database',
-      icon: '⚡',
-    },
-    {
-      title: 'Diagnose Binary Trees',
-      desc: 'Test your grasp on traversal algorithms and complexities',
-      prompt: 'Diagnose my understanding of Binary Search Tree insertions and edge cases with a quick diagnostic test.',
-      tag: 'Algorithms',
-      icon: '🌲',
-    },
-    {
-      title: 'React Immutability',
-      desc: 'Why state should never be mutated directly in React',
-      prompt: 'Break down React State Immutability and why mutating state directly breaks rendering pipelines.',
-      tag: 'Web Tech',
-      icon: '⚛️',
-    },
-    {
-      title: 'System Design 101',
-      desc: 'Caching, horizontal scaling, and database replication',
-      prompt: 'Walk me through core system design principles: when to use Redis caching vs Database indexing.',
-      tag: 'Architecture',
-      icon: '🏗️',
-    },
+  const quickActionChips = [
+    { label: 'Deep Search', icon: '🔍', prompt: 'Deep search and explain the fundamental concepts of database indexing' },
+    { label: 'Explain Concept', icon: '💡', prompt: 'Explain how SQL JOINs work with visual diagrams and examples' },
+    { label: 'Practice Quiz', icon: '📝', prompt: 'Generate 3 interactive practice quiz questions on binary search trees' },
+    { label: 'Generate Notes', icon: '📑', prompt: 'Create a comprehensive exam study revision sheet for computer networks' },
   ];
 
-  return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#FAFBFC] text-slate-800 font-sans selection:bg-indigo-600 selection:text-white">
-      {/* ========================================================= */}
-      {/* LEFT SIDEBAR: Clean, uncluttered, focused */}
-      {/* ========================================================= */}
-      <aside
-        className={`h-full border-r border-slate-200/80 bg-white flex flex-col justify-between shrink-0 z-30 transition-all duration-300 ${
-          isLeftSidebarOpen ? 'w-64' : 'w-18'
+  // Helper to render attachment chips in input box
+  const renderAttachmentChips = () => {
+    if (currentAttachments.length === 0) return null;
+    return (
+      <div className="flex flex-wrap gap-2 p-2 bg-indigo-50/70 rounded-xl border border-indigo-100 mb-2">
+        {currentAttachments.map((att) => (
+          <div
+            key={att.id}
+            className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white border border-indigo-200/80 text-xs text-indigo-900 shadow-2xs group"
+          >
+            {att.type.startsWith('image/') ? (
+              <ImageIcon className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            ) : (
+              <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            )}
+            <span className="truncate max-w-[130px] font-medium">{att.name}</span>
+            <span className="text-[10px] text-indigo-400 font-mono">
+              ({(att.size / 1024).toFixed(1)} KB)
+            </span>
+            <button
+              type="button"
+              onClick={() => setPreviewAttachment(att)}
+              className="p-0.5 text-indigo-500 hover:text-indigo-700 rounded transition-colors cursor-pointer"
+              title="Preview attachment"
+            >
+              <Eye className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRemoveAttachment(att.id)}
+              className="p-0.5 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+              title="Remove attachment"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Helper to render each chat history item with 3-dots dropdown
+  const renderSessionItem = (session: ChatSession) => {
+    const isActive = session.id === activeSession?.id;
+    const isMenuOpen = activeMenuSessionId === session.id;
+    const isRenaming = renamingSessionId === session.id;
+
+    return (
+      <div
+        key={session.id}
+        onClick={() => {
+          if (!isRenaming) setActiveSessionId(session.id);
+        }}
+        className={`group relative flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+          isActive
+            ? 'bg-slate-100 text-slate-900 font-semibold'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
         }`}
       >
-        {/* Top: Brand & New Chat */}
-        <div className="p-4 border-b border-slate-100 space-y-3">
-          <div className="flex items-center justify-between">
-            <div
-              onClick={() => navigate('/app/dashboard')}
-              className="flex items-center gap-2.5 overflow-hidden cursor-pointer group"
-            >
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-105 transition-transform">
-                <Brain className="w-4 h-4" />
-              </div>
-              {isLeftSidebarOpen && (
-                <span className="font-bold text-slate-900 text-sm tracking-tight truncate">
-                  MetaMind
-                </span>
-              )}
-            </div>
+        <div className="flex items-center gap-1.5 min-w-0 pr-1 flex-1">
+          {session.pinned && <Pin className="w-3 h-3 text-indigo-600 shrink-0 fill-indigo-100" />}
 
-            <button
-              onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shrink-0"
-              title={isLeftSidebarOpen ? 'Collapse Sidebar' : 'Expand Sidebar'}
+          {isRenaming ? (
+            <input
+              type="text"
+              autoFocus
+              value={renameTitle}
+              onChange={(e) => setRenameTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveRename(session.id);
+                if (e.key === 'Escape') setRenamingSessionId(null);
+              }}
+              onBlur={() => handleSaveRename(session.id)}
+              className="w-full bg-white px-1.5 py-0.5 border border-indigo-400 rounded text-xs outline-none"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="truncate text-left">{session.title || 'Discussion'}</span>
+          )}
+        </div>
+
+        {/* 3-DOTS ACTION TRIGGER */}
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isMenuOpen) {
+                setActiveMenuSessionId(null);
+              } else {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                setMenuDirection(spaceBelow < 230 ? 'up' : 'down');
+                setActiveMenuSessionId(session.id);
+              }
+            }}
+            className={`p-1 rounded-md transition-opacity cursor-pointer ${
+              isMenuOpen ? 'opacity-100 bg-slate-200 text-slate-900' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+            }`}
+            title="Chat options"
+          >
+            <MoreVertical className="w-3.5 h-3.5" />
+          </button>
+
+          {/* FLOATING 3-DOTS MENU */}
+          {isMenuOpen && (
+            <div
+              ref={menuRef}
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute right-0 ${
+                menuDirection === 'up' ? 'bottom-7' : 'top-6'
+              } w-44 bg-white border border-slate-200 rounded-xl shadow-xl p-1 z-50 space-y-0.5 animate-in fade-in zoom-in-95 duration-150`}
             >
-              {isLeftSidebarOpen ? (
-                <PanelLeftClose className="w-4 h-4" />
-              ) : (
-                <PanelLeft className="w-4 h-4" />
-              )}
+              <button
+                type="button"
+                onClick={() => handleTogglePin(session.id, !session.pinned)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Pin className={`w-3.5 h-3.5 ${session.pinned ? 'text-indigo-600 fill-indigo-100' : 'text-slate-400'}`} />
+                <span>{session.pinned ? 'Unpin Discussion' : 'Pin Discussion'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleStartRename(session)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>Rename Title</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenShare(session)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Share with Friends</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleExportChat(session)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-400" />
+                <span>Export Notes (.md)</span>
+              </button>
+
+              <div className="border-t border-slate-100 my-1" />
+
+              <button
+                type="button"
+                onClick={(e) => handleDeleteChat(e, session.id)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Delete Chat</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="h-screen w-full flex bg-[#F8FAFC] text-slate-800 font-sans overflow-hidden selection:bg-blue-100 relative"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDraggingOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDraggingOver(false);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFilesAdded(e.dataTransfer.files);
+        }
+      }}
+    >
+      {/* DRAG AND DROP FULLSCREEN OVERLAY */}
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-50 bg-indigo-950/20 backdrop-blur-xs border-2 border-dashed border-indigo-600 rounded-3xl m-4 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-150 pointer-events-none">
+          <div className="w-16 h-16 rounded-2xl bg-white text-indigo-600 shadow-2xl flex items-center justify-center mb-3">
+            <UploadCloud className="w-8 h-8 animate-bounce" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900">Drop files to attach</h3>
+          <p className="text-xs text-slate-600 font-medium max-w-sm">
+            Attach PDFs, assignments, code scripts, or diagram images. MetaMind AI will parse them directly in this discussion.
+          </p>
+        </div>
+      )}
+
+      {/* MODALS */}
+      <PluginMarketplaceModal
+        isOpen={isPluginStoreOpen}
+        onClose={() => setIsPluginStoreOpen(false)}
+        onPluginsUpdated={(updated) => setInstalledPlugins(updated)}
+      />
+
+      <ShareChatModal
+        isOpen={isShareModalOpen}
+        session={sharingSession}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setSharingSession(null);
+        }}
+      />
+
+      <FilePreviewModal
+        attachment={previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        onRemove={(id) => handleRemoveAttachment(id)}
+      />
+
+      {/* Hidden Global File Input for Attachment Button */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleFilesAdded(e.target.files);
+          }
+        }}
+      />
+
+      {/* ========================================================= */}
+      {/* LEFT SIDEBAR WITH HISTORY, SEARCH, AND PLUGINS STORE */}
+      {/* ========================================================= */}
+      <aside
+        className={`${
+          isLeftSidebarOpen ? 'w-64' : 'w-0'
+        } transition-all duration-300 ease-in-out bg-white border-r border-slate-200/80 flex flex-col h-full overflow-hidden shrink-0 select-none z-30`}
+      >
+        {/* TOP FIXED CONTROLS */}
+        <div className="p-3.5 space-y-2.5 shrink-0 border-b border-slate-100 bg-white">
+          {/* Header with Official Logo */}
+          <div className="flex items-center justify-between px-0.5">
+            <div className="flex items-center gap-2">
+              <img
+                src="/assets/brand/metamind_icon.png"
+                alt="MetaMind"
+                className="w-7 h-7 object-contain rounded-lg shadow-2xs"
+              />
+              <span className="font-display font-bold text-base text-slate-900 tracking-tight">
+                MetaMind AI
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsLeftSidebarOpen(false)}
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              title="Close sidebar"
+            >
+              <PanelLeftClose className="w-4 h-4" />
             </button>
           </div>
 
           {/* New Chat Button */}
           <button
+            type="button"
             onClick={handleCreateNewChat}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer bg-slate-900 hover:bg-indigo-600"
-            title="Start New Chat Session"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all cursor-pointer shadow-2xs"
           >
-            <Plus className="w-3.5 h-3.5" />
-            {isLeftSidebarOpen && <span>New Thread</span>}
+            <SquarePen className="w-4 h-4 text-slate-500" />
+            <span>New Chat</span>
           </button>
 
-          {/* Search bar */}
-          {isLeftSidebarOpen && (
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search history..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:bg-white transition-all text-slate-800"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Sessions List */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-          {/* Cognitive Persona Modes */}
-          <div className="space-y-1">
-            {isLeftSidebarOpen && (
-              <div className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">
-                AI Mode
-              </div>
-            )}
-            {CHAT_PLUGINS.map((plugin) => {
-              const isSelected = activePlugin === plugin.id;
-              return (
-                <button
-                  key={plugin.id}
-                  onClick={() => setActivePlugin(plugin.id)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-indigo-50/80 text-indigo-900 font-semibold border border-indigo-100 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                  title={plugin.name}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="text-sm shrink-0">{plugin.icon}</span>
-                    {isLeftSidebarOpen && <span className="truncate">{plugin.name}</span>}
-                  </div>
-                  {isLeftSidebarOpen && (
-                    <span className="text-[9px] font-mono text-slate-400">
-                      {plugin.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Recent Study Threads */}
-          <div className="space-y-1">
-            {isLeftSidebarOpen && (
-              <div className="flex items-center justify-between text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">
-                <span>Recent Chats</span>
-                <span>({filteredSessions.length})</span>
-              </div>
-            )}
-
-            {filteredSessions.slice(0, 10).map((session) => {
-              const isActive = session.id === activeSession?.id;
-              return (
-                <div
-                  key={session.id}
-                  onClick={() => setActiveSessionId(session.id)}
-                  className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-slate-100 text-slate-900 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                    {isLeftSidebarOpen && (
-                      <span className="truncate max-w-[130px] text-left">
-                        {session.title || 'Untitled Discussion'}
-                      </span>
-                    )}
-                  </div>
-
-                  {isLeftSidebarOpen && (
-                    <button
-                      onClick={(e) => handleDeleteChat(e, session.id)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-rose-600 text-slate-400 transition-opacity shrink-0"
-                      title="Delete thread"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom: Profile & Quick Links */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-1.5">
+          {/* Plugins Marketplace Entry Button */}
           <button
-            onClick={() => navigate('/app/dashboard')}
-            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition-all cursor-pointer group"
+            type="button"
+            onClick={() => setIsPluginStoreOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-100 transition-all cursor-pointer shadow-2xs group"
           >
-            <div className="flex items-center gap-2 truncate">
+            <div className="flex items-center gap-2">
+              <Puzzle className="w-4 h-4 text-indigo-600 group-hover:rotate-12 transition-transform" />
+              <span>Plugin Store</span>
+            </div>
+            <span className="px-1.5 py-0.5 rounded-full bg-indigo-200/80 text-[10px] font-mono font-bold text-indigo-800">
+              {installedPlugins.filter((p) => p.isEnabled).length} Active
+            </span>
+          </button>
+
+          {/* Search Chat Input with Clear Button */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-indigo-500 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* MIDDLE SCROLLABLE BODY (Takes all remaining vertical space) */}
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3.5 space-y-4 pb-16">
+          {/* Projects Section */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 px-1 py-1">
+              <span>Projects</span>
+              <Folder className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+
+            <div className="space-y-0.5">
+              {projects.map((proj) => {
+                const isSelected = selectedProject === proj.id;
+                return (
+                  <button
+                    key={proj.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedProject(isSelected ? null : proj.id);
+                      handleSendMessage(`Let's study concepts from ${proj.name}`);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/60'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Folder
+                        className={`w-3.5 h-3.5 ${
+                          isSelected ? 'text-indigo-600' : 'text-slate-400'
+                        }`}
+                      />
+                      <span className="truncate">{proj.name}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{proj.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Chat History with Time-Groups & 3-Dots Menus */}
+          <div className="space-y-3 pt-1">
+            {/* PINNED CHATS */}
+            {pinnedSessions.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-wider px-1 flex items-center gap-1">
+                  <Pin className="w-2.5 h-2.5 fill-indigo-500" />
+                  <span>PINNED</span>
+                </span>
+                {pinnedSessions.map(renderSessionItem)}
+              </div>
+            )}
+
+            {/* TODAY */}
+            {todaySessions.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider px-1">
+                  TODAY
+                </span>
+                {todaySessions.map(renderSessionItem)}
+              </div>
+            )}
+
+            {/* YESTERDAY */}
+            {yesterdaySessions.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider px-1">
+                  YESTERDAY
+                </span>
+                {yesterdaySessions.map(renderSessionItem)}
+              </div>
+            )}
+
+            {/* OLDER DISCUSSIONS */}
+            {olderSessions.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider px-1">
+                  PREVIOUS
+                </span>
+                {olderSessions.map(renderSessionItem)}
+              </div>
+            )}
+
+            {filteredSessions.length === 0 && (
+              <div className="text-center py-6 text-xs text-slate-400">
+                No discussions found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* User Profile Pill at Bottom (Fixed Dock) */}
+        <div className="shrink-0 p-3 border-t border-slate-200/80 bg-slate-50/70">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
               <img
                 src={avatarUrl}
                 alt={registeredName}
-                className="w-7 h-7 rounded-lg border border-slate-200 object-cover bg-white shrink-0"
+                className="w-8 h-8 rounded-lg bg-slate-100 object-cover border border-slate-200 shrink-0"
               />
-              {isLeftSidebarOpen && (
-                <div className="truncate text-left">
-                  <div className="text-xs font-semibold text-slate-800 truncate">{registeredName}</div>
-                  <div className="text-[10px] text-slate-400 truncate">Student Portal</div>
-                </div>
-              )}
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-800 truncate">{registeredName}</div>
+                <div className="text-[10px] text-slate-400 font-mono">Free Plan</div>
+              </div>
             </div>
-            {isLeftSidebarOpen && (
-              <LayoutDashboard className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" />
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => navigate('/app/dashboard')}
+              className="px-2.5 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-[10px] font-bold shadow-xs hover:opacity-95 cursor-pointer shrink-0"
+            >
+              Dashboard
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* ========================================================= */}
-      {/* MAIN CONVERSATIONAL CANVAS */}
+      {/* MAIN CHAT WORKSPACE CANVAS */}
       {/* ========================================================= */}
-      <main className="flex-1 h-full flex flex-col justify-between relative overflow-hidden bg-white">
-        {/* Subtle Ambient Background Gradient */}
-        <div className="absolute top-0 right-0 w-[500px] h-[300px] bg-gradient-to-bl from-indigo-100/40 via-purple-50/20 to-transparent blur-3xl pointer-events-none" />
-
-        {/* Top Minimal Header */}
-        <header className="h-14 border-b border-slate-100 px-6 flex items-center justify-between bg-white/80 backdrop-blur-md relative z-10">
+      <main className="flex-1 flex flex-col h-full bg-[#F8FAFC] relative overflow-hidden">
+        {/* Workspace Top Header */}
+        <header className="h-14 border-b border-slate-200/70 bg-white/80 backdrop-blur-xs flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold text-slate-800">
-              {activeSession?.title || 'Interactive AI Tutor'}
-            </h2>
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-medium text-slate-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{CHAT_PLUGINS.find((p) => p.id === activePlugin)?.name || 'Tutor Ready'}</span>
+            {!isLeftSidebarOpen && (
+              <button
+                type="button"
+                onClick={() => setIsLeftSidebarOpen(true)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="Open sidebar"
+              >
+                <PanelLeft className="w-4 h-4" />
+              </button>
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-bold text-slate-800 max-w-[200px] sm:max-w-xs truncate">
+                {activeSession?.title || 'Academic Chat'}
+              </span>
+
+              {/* Active Plugin Indicator */}
+              <button
+                type="button"
+                onClick={() => setIsPluginStoreOpen(true)}
+                className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
+              >
+                <Puzzle className="w-3 h-3 text-indigo-600" />
+                <span>{CHAT_PLUGINS.find((p) => p.id === activePlugin)?.name || 'Concept Tutor'}</span>
+              </button>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+            {/* Share Current Chat Button */}
+            {activeSession && (
+              <button
+                type="button"
+                onClick={() => handleOpenShare(activeSession)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-100 rounded-xl transition-all cursor-pointer shadow-2xs"
+                title="Share this chat with friends"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            )}
+
+            <button
+              type="button"
               onClick={() => navigate('/app/dashboard')}
-              className="text-xs font-medium text-slate-600 hover:text-slate-900 gap-1.5 rounded-lg border-slate-200"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-colors cursor-pointer"
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Dashboard</span>
-            </Button>
+            </button>
 
             <button
+              type="button"
               onClick={handleCreateNewChat}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-              title="New Thread"
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              title="New Chat"
             >
-              <Plus className="w-4 h-4" />
+              <SquarePen className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        {/* Center Stream / Canvas */}
+        {/* Conversational Stream */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 relative z-10">
-          {(!activeSession?.messages || activeSession.messages.length === 0) ? (
-            /* SIMPLE & CREATIVE EMPTY HERO STATE */
-            <div className="max-w-2xl mx-auto py-8 sm:py-16 text-center space-y-8 animate-in fade-in-50 duration-500">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 text-indigo-700 text-xs font-medium shadow-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Interactive Cognitive Study Assistant</span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  What would you like to master today?
+          {!activeSession?.messages || activeSession.messages.length === 0 ? (
+            /* CENTERED WELCOME SCREEN */
+            <div className="max-w-xl mx-auto pt-14 sm:pt-20 text-center space-y-7 animate-in fade-in-50 duration-300">
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-display">
+                  Hey, How Can I Assist?
                 </h1>
-                <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-                  Ask a doubt, explore complex topics, or generate practice questions with instant step-by-step feedback.
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
+                  Attach coursework documents, explore formulas, or ask questions to receive tailored cognitive diagnostics.
                 </p>
               </div>
 
-              {/* Centered Integrated Prompt Input Box */}
-              <div className="max-w-xl mx-auto text-left shadow-lg rounded-3xl">
-                <PromptInputBox
-                  onSend={(message, files) => handleSendMessage(message, files)}
-                  isLoading={isAiThinking}
-                  placeholder="Ask a question, paste code, or type a topic..."
+              {/* Center Prompt Box */}
+              <div className="w-full bg-white border border-slate-200/90 rounded-3xl p-3 sm:p-4 shadow-lg shadow-slate-100 space-y-3 text-left">
+                {/* Attached File Chips */}
+                {renderAttachmentChips()}
+
+                <textarea
+                  rows={2}
+                  placeholder="Ask me anything or drag and drop study documents..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="w-full text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none px-2 pt-1 font-sans"
                 />
+
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    {/* Attachment trigger button */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      title="Attach file (PDF, image, document)"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+
+                    {/* Plugin Store quick shortcut */}
+                    <button
+                      type="button"
+                      onClick={() => setIsPluginStoreOpen(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      title="Explore downloadable plugins"
+                    >
+                      <Puzzle className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Plugins</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                      {selectedModel}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage()}
+                      disabled={!inputMessage.trim() && currentAttachments.length === 0}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        inputMessage.trim() || currentAttachments.length > 0
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Creative Minimalist Prompt Starters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left max-w-xl mx-auto pt-2">
-                {starterPrompts.map((card, idx) => (
-                  <div
+              {/* Quick Action Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                {quickActionChips.map((chip, idx) => (
+                  <button
                     key={idx}
-                    onClick={() => handleSendMessage(card.prompt)}
-                    className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-200 transition-all flex flex-col justify-between group cursor-pointer shadow-xs hover:shadow-sm"
+                    type="button"
+                    onClick={() => handleSendMessage(chip.prompt)}
+                    className="p-3 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl text-left transition-all hover:border-slate-300 shadow-2xs group cursor-pointer"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-lg">{card.icon}</span>
-                      <span className="text-[10px] font-mono text-slate-400 group-hover:text-indigo-600 transition-colors">
-                        {card.tag}
-                      </span>
+                    <div className="text-base mb-1 group-hover:scale-110 transition-transform">
+                      {chip.icon}
                     </div>
-                    <div className="mt-2.5">
-                      <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
-                        <span>{card.title}</span>
-                        <ArrowUpRight className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                        {card.desc}
-                      </p>
+                    <div className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                      {chip.label}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           ) : (
-            /* CHAT CONVERSATION STREAM */
-            <div className="max-w-3xl mx-auto space-y-6">
-              {activeSession.messages.map((msg) => {
-                const isUser = msg.sender === 'user';
+            /* CONVERSATION THREAD */
+            <div className="max-w-3xl mx-auto space-y-6 pb-24">
+              {activeSession.messages.map((message) => {
+                const isUser = message.sender === 'user';
                 return (
                   <div
-                    key={msg.id}
-                    className={`flex items-start gap-3.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                    key={message.id}
+                    className={`flex gap-3 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    {/* Avatar */}
-                    {isUser ? (
+                    {!isUser && (
                       <img
-                        src={avatarUrl}
-                        alt={registeredName}
-                        className="w-7 h-7 rounded-lg border border-slate-200 object-cover shrink-0 shadow-xs"
+                        src="/assets/brand/metamind_icon.png"
+                        alt="MetaMind AI"
+                        className="w-8 h-8 rounded-xl object-contain border border-indigo-100 bg-white shadow-2xs shrink-0 p-0.5 mt-1"
                       />
-                    ) : (
-                      <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
-                        <Bot className="w-4 h-4 text-indigo-300" />
-                      </div>
                     )}
 
-                    {/* Message Bubble Content */}
-                    <div className={`space-y-3 max-w-[85%] ${isUser ? 'text-right' : 'text-left'}`}>
+                    <div className="max-w-[88%] sm:max-w-[80%] space-y-2">
+                      {/* Attached documents in message bubble */}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div
+                          className={`flex flex-wrap gap-2 ${
+                            isUser ? 'justify-end' : 'justify-start'
+                          }`}
+                        >
+                          {message.attachments.map((att) => (
+                            <button
+                              key={att.id}
+                              type="button"
+                              onClick={() => setPreviewAttachment(att)}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-300 text-xs text-slate-800 transition-all cursor-pointer shadow-2xs group"
+                            >
+                              {att.type.startsWith('image/') ? (
+                                <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                              )}
+                              <span className="font-semibold truncate max-w-[150px]">
+                                {att.name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                ({(att.size / 1024).toFixed(1)} KB)
+                              </span>
+                              <Eye className="w-3 h-3 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Main Bubble */}
                       <div
-                        className={`p-4 sm:p-5 rounded-2xl text-sm leading-relaxed ${
+                        className={`p-4 sm:p-5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-xs ${
                           isUser
-                            ? 'bg-slate-900 text-white font-medium rounded-tr-xs shadow-xs'
-                            : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-xs shadow-xs'
+                            ? 'bg-slate-900 text-white rounded-br-xs font-sans'
+                            : 'bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs'
                         }`}
                       >
-                        <RenderFormattedMessage content={msg.content} isUser={isUser} />
+                        {isUser ? (
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                        ) : (
+                          <FormattedAiContent content={message.content} />
+                        )}
                       </div>
 
-                      {/* DIAGNOSTIC CARD (Clean, Simple, Creative) */}
-                      {msg.diagnostic && (
-                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 text-left text-slate-800">
-                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                      {/* Cognitive Diagnostic Card */}
+                      {!isUser && message.diagnostic && (
+                        <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3 shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-indigo-100/80 pb-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-base">{msg.diagnostic.scenario?.icon || '🧠'}</span>
-                              <div>
-                                <span className="text-xs font-bold text-slate-900 block">
-                                  {msg.diagnostic.scenario?.label || 'Knowledge Verification'}
-                                </span>
-                                <span className="text-[11px] text-slate-500">
-                                  Topic: <strong className="text-slate-700">{msg.diagnostic.topic}</strong>
-                                </span>
-                              </div>
+                              <Brain className="w-4 h-4 text-indigo-600" />
+                              <span className="text-xs font-bold text-slate-900">
+                                Diagnostic Gap: {message.diagnostic.topic}
+                              </span>
                             </div>
-
-                            {/* Quick PDF button */}
-                            <button
-                              onClick={() =>
-                                downloadStudyGuidePdf(
-                                  msg.diagnostic!.topic,
-                                  msg.diagnostic!,
-                                  registeredName
-                                )
-                              }
-                              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-100 flex items-center gap-1.5 transition-all cursor-pointer"
-                            >
-                              <FileDown className="w-3.5 h-3.5" />
-                              <span>Export Revision PDF</span>
-                            </button>
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                              {message.diagnostic.confidenceLevel} Confidence
+                            </span>
                           </div>
 
-                          {/* Diagnostic Questions */}
-                          {msg.diagnostic.quickCheck && msg.diagnostic.quickCheck.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                                <div className="flex items-center gap-1.5">
-                                  <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-                                  <span>Concept Check</span>
+                          {/* Quick Check Questions */}
+                          {message.diagnostic.quickCheck.map((q) => {
+                            const selectedAns = quizAnswers[`${message.id}_${q.id}`];
+                            const isAnswered = selectedAns !== undefined;
+
+                            return (
+                              <div
+                                key={q.id}
+                                className="p-3 bg-white rounded-xl border border-slate-200/70 space-y-2 text-xs"
+                              >
+                                <div className="font-semibold text-slate-800">
+                                  {q.question}
                                 </div>
-                                <span className="text-[10px] font-mono text-slate-400">
-                                  {msg.diagnostic.quickCheck.length} Question{msg.diagnostic.quickCheck.length > 1 ? 's' : ''}
-                                </span>
-                              </div>
+                                <div className="space-y-1">
+                                  {q.options.map((opt, optIdx) => {
+                                    const isChosen = selectedAns === optIdx;
+                                    const isCorrect = q.correctIndex === optIdx;
 
-                              {msg.diagnostic.quickCheck.map((questionItem, qIdx) => {
-                                const selectedAnswer = quizAnswers[`${msg.id}_${questionItem.id}`];
-                                const hasAnsweredThis = selectedAnswer !== undefined;
-
-                                return (
-                                  <div
-                                    key={questionItem.id}
-                                    className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5"
-                                  >
-                                    <div className="text-xs font-medium text-slate-800">
-                                      <span className="font-bold text-slate-500 mr-1.5">Q{qIdx + 1}.</span>
-                                      {questionItem.question}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                                      {questionItem.options.map((opt, oIdx) => {
-                                        const isSelected = selectedAnswer === oIdx;
-                                        const isCorrect = oIdx === questionItem.correctIndex;
-
-                                        let optClass =
-                                          'bg-white border-slate-200 hover:bg-slate-100 text-slate-700';
-                                        if (hasAnsweredThis) {
-                                          if (isSelected && isCorrect) {
-                                            optClass =
-                                              'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold';
-                                          } else if (isSelected && !isCorrect) {
-                                            optClass =
-                                              'bg-rose-50 border-rose-300 text-rose-900 font-semibold';
-                                          } else if (isCorrect) {
-                                            optClass =
-                                              'bg-emerald-50/60 border-emerald-200 text-emerald-800';
-                                          }
+                                    return (
+                                      <button
+                                        key={optIdx}
+                                        type="button"
+                                        disabled={isAnswered}
+                                        onClick={() =>
+                                          handleSelectQuizAnswer(message.id, q.id, optIdx)
                                         }
-
-                                        return (
-                                          <button
-                                            key={oIdx}
-                                            onClick={() =>
-                                              handleSelectQuizAnswer(msg.id, questionItem.id, oIdx)
-                                            }
-                                            className={`p-2 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${optClass}`}
-                                          >
-                                            <span>{opt}</span>
-                                            {hasAnsweredThis && isCorrect && (
-                                              <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                                            )}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-
-                                    {hasAnsweredThis && (
-                                      <p className="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
-                                        💡 {questionItem.explanation}
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Suggested Next Inquiries */}
-                          {msg.diagnostic.followUpPrompts && msg.diagnostic.followUpPrompts.length > 0 && (
-                            <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
-                                Suggested Explorations
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {msg.diagnostic.followUpPrompts.map((promptText, pIdx) => (
-                                  <button
-                                    key={pIdx}
-                                    onClick={() => handleSendMessage(promptText)}
-                                    className="text-xs px-3 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 border border-slate-200 hover:border-indigo-200 transition-all cursor-pointer font-medium"
-                                  >
-                                    {promptText}
-                                  </button>
-                                ))}
+                                        className={`w-full text-left p-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                                          !isAnswered
+                                            ? 'hover:bg-slate-50 border border-slate-100'
+                                            : isChosen && !isCorrect
+                                            ? 'bg-rose-50 border border-rose-300 text-rose-800'
+                                            : isCorrect
+                                            ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                                            : 'bg-white border border-slate-100 text-slate-400'
+                                        }`}
+                                      >
+                                        {opt}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* PDF Study Guide Action */}
+                      {message.diagnostic && (
+                        <div className="mt-3 pt-2 border-t border-slate-100 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadStudyGuidePdf(
+                                activeSession?.title || 'Academic Topic',
+                                message.diagnostic!,
+                                registeredName
+                              )
+                            }
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                          >
+                            <FileDown className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Export Study Guide PDF</span>
+                          </button>
                         </div>
                       )}
                     </div>
+
+                    {isUser && (
+                      <img
+                        src={avatarUrl}
+                        alt="User"
+                        className="w-8 h-8 rounded-xl bg-slate-100 object-cover border border-slate-200 shrink-0 shadow-2xs"
+                      />
+                    )}
                   </div>
                 );
               })}
 
-              {/* AI Thinking Animation */}
               {isAiThinking && (
-                <div className="flex items-center gap-3 text-slate-500 text-xs">
-                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-indigo-300" />
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-2.5">
-                    <LoaderGrid size="0.6em" />
-                    <span className="animate-pulse font-medium text-slate-600 text-xs">
-                      MetaMind is formulating a step-by-step explanation...
+                <div className="flex items-start gap-3">
+                  <img
+                    src="/assets/brand/metamind_icon.png"
+                    alt="MetaMind AI"
+                    className="w-8 h-8 rounded-xl object-contain border border-indigo-100 bg-white shadow-2xs shrink-0 animate-pulse p-0.5"
+                  />
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center gap-2">
+                    <LoaderGrid size="0.4em" />
+                    <span className="text-xs text-slate-500 font-medium">
+                      MetaMind AI is reasoning...
                     </span>
                   </div>
                 </div>
@@ -876,20 +1330,60 @@ export const ChatbotWorkspacePage: React.FC = () => {
           )}
         </div>
 
-        {/* ========================================================= */}
-        {/* BOTTOM PROMPT DOCK (When conversation is active) */}
-        {/* ========================================================= */}
+        {/* BOTTOM DOCKED PROMPT INPUT (When in active conversation) */}
         {activeSession?.messages && activeSession.messages.length > 0 && (
-          <div className="p-4 bg-gradient-to-t from-white via-white/90 to-transparent relative z-20">
-            <div className="max-w-3xl mx-auto space-y-2">
-              <PromptInputBox
-                onSend={(message, files) => handleSendMessage(message, files)}
-                isLoading={isAiThinking}
-                placeholder="Ask a follow-up doubt, test edge cases, or explore further..."
+          <div className="p-4 bg-white/95 border-t border-slate-100 backdrop-blur-xs relative z-20">
+            <div className="max-w-3xl mx-auto bg-white border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-md space-y-2">
+              {/* Attached file chips above input */}
+              {renderAttachmentChips()}
+
+              <textarea
+                rows={1}
+                placeholder="Ask a follow up question or attach notes..."
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none px-2 font-sans"
               />
-              <p className="text-[11px] text-center text-slate-400 font-sans">
-                MetaMind AI simplifies complex academic concepts with tailored diagnostics and revisions.
-              </p>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Attach file (PDF, code, doc)"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Plugin Store quick trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setIsPluginStoreOpen(true)}
+                    className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-md transition-colors cursor-pointer"
+                  >
+                    <Puzzle className="w-3 h-3 text-indigo-600" />
+                    <span>Plugins ({installedPlugins.filter((p) => p.isEnabled).length})</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-slate-400">{selectedModel}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputMessage.trim() && currentAttachments.length === 0}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      inputMessage.trim() || currentAttachments.length > 0
+                        ? 'bg-slate-900 text-white hover:bg-slate-800'
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -897,5 +1391,3 @@ export const ChatbotWorkspacePage: React.FC = () => {
     </div>
   );
 };
-
-export default ChatbotWorkspacePage;

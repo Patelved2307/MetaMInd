@@ -34,6 +34,85 @@ export interface GamifiedBadge {
   icon: React.ElementType;
 }
 
+const Hexagonal3DBadge: React.FC<{
+  badge: GamifiedBadge;
+  size?: 'sm' | 'lg';
+}> = ({ badge, size = 'sm' }) => {
+  const Icon = badge.icon;
+  const isLarge = size === 'lg';
+
+  return (
+    <div
+      className={`relative flex items-center justify-center select-none ${
+        isLarge ? 'w-36 h-40' : 'w-24 h-28'
+      }`}
+    >
+      {/* 3D Outer Hexagon Drop Shadow & Bevel */}
+      <div
+        className="w-full h-full relative flex items-center justify-center filter drop-shadow-md transition-transform duration-300 group-hover:scale-105"
+      >
+        {/* Outer Hexagon Metallic Rim */}
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-white via-slate-200 to-slate-400 p-[3px] shadow-inner"
+          style={{
+            clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)',
+          }}
+        >
+          {/* Inner Hexagon Body with Gradient */}
+          <div
+            className={`w-full h-full bg-gradient-to-br ${badge.iconBg} relative flex items-center justify-center overflow-hidden`}
+            style={{
+              clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)',
+            }}
+          >
+            {/* 3D Top Facet Specular Light Sheen */}
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/15 to-transparent pointer-events-none"
+              style={{
+                clipPath: 'polygon(50% 0%, 95% 25%, 50% 50%, 5% 25%)',
+              }}
+            />
+
+            {/* 3D Bottom Facet Shading */}
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none"
+              style={{
+                clipPath: 'polygon(50% 100%, 95% 75%, 50% 50%, 5% 75%)',
+              }}
+            />
+
+            {/* Centered Badge Icon */}
+            <Icon
+              className={`${
+                isLarge ? 'w-16 h-16' : 'w-10 h-10'
+              } text-white drop-shadow-md relative z-10 transition-transform group-hover:scale-110`}
+            />
+          </div>
+        </div>
+
+        {/* Top-Right Sparkle Jewel for Unlocked */}
+        {badge.unlocked && (
+          <div className="absolute -top-1 right-1 w-5 h-5 bg-amber-300 rounded-full flex items-center justify-center text-[10px] text-amber-950 font-bold shadow-md animate-pulse z-20 border border-white">
+            ✨
+          </div>
+        )}
+
+        {/* Locked Dimming Overlay */}
+        {!badge.unlocked && (
+          <div
+            className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center text-white z-20"
+            style={{
+              clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)',
+            }}
+          >
+            <Lock className={isLarge ? 'w-8 h-8' : 'w-5 h-5 text-white/90 drop-shadow'} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const BADGES_COLLECTION: GamifiedBadge[] = [
   {
     id: 'badge-1',
@@ -251,55 +330,33 @@ export const AchievementsPage: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {BADGES_COLLECTION.map((badge) => {
-            const Icon = badge.icon;
-
             return (
               <motion.div
                 key={badge.id}
-                whileHover={{ scale: 1.05, y: -4 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.04, y: -4 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setSelectedBadge(badge)}
                 className={`relative flex flex-col items-center p-5 rounded-3xl border transition-all cursor-pointer group ${
                   badge.unlocked
                     ? 'bg-white border-slate-200/90 shadow-md hover:shadow-xl'
-                    : 'bg-slate-50/80 border-slate-200/50 opacity-60 grayscale'
+                    : 'bg-slate-50/80 border-slate-200/50 opacity-65 grayscale'
                 }`}
               >
-                {/* 3D HEXAGON BADGE ICON CONTAINER WITH SHINE EFFECT */}
-                <div className="relative w-24 h-24 flex items-center justify-center my-2">
-                  {/* Hexagon Outline Shield */}
-                  <div
-                    className={`w-20 h-22 rounded-3xl bg-gradient-to-br ${badge.iconBg} shadow-lg flex items-center justify-center relative overflow-hidden border-2 border-white/60 group-hover:rotate-3 transition-transform`}
-                  >
-                    {/* Inner 3D Specular Light Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent pointer-events-none" />
-                    <Icon className="w-10 h-10 text-white drop-shadow-md relative z-10" />
-                  </div>
-
-                  {/* Top Star Sparkles */}
-                  {badge.unlocked && (
-                    <div className="absolute -top-1 right-2 w-4 h-4 bg-amber-300 rounded-full flex items-center justify-center text-[10px] text-amber-900 font-bold shadow-sm animate-pulse">
-                      ✨
-                    </div>
-                  )}
-
-                  {!badge.unlocked && (
-                    <div className="absolute inset-0 bg-slate-900/40 rounded-3xl backdrop-blur-xs flex items-center justify-center text-white">
-                      <Lock className="w-6 h-6" />
-                    </div>
-                  )}
+                {/* AUTHENTIC 3D HEXAGON BADGE WITH SPECULAR DEPTH */}
+                <div className="my-2">
+                  <Hexagonal3DBadge badge={badge} size="sm" />
                 </div>
 
-                {/* BOTTOM RIBBON BANNER */}
+                {/* BOTTOM 3D RIBBON BANNER */}
                 <div
-                  className={`mt-2 px-3 py-1 rounded-full text-[10px] font-mono font-extrabold uppercase tracking-wider text-white shadow-md text-center w-full truncate ${badge.bannerBg}`}
+                  className={`mt-3 px-3 py-1 rounded-full text-[10px] font-mono font-extrabold uppercase tracking-wider text-white shadow-md text-center w-full truncate ${badge.bannerBg}`}
                 >
                   {badge.bannerText}
                 </div>
 
-                {/* Badge Title & XP */}
-                <div className="text-center mt-3 space-y-0.5">
-                  <p className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                {/* Badge Title & XP - No ugly cutoff */}
+                <div className="text-center mt-3 space-y-1 w-full px-1">
+                  <p className="text-xs font-bold text-slate-900 line-clamp-2 min-h-[32px] flex items-center justify-center leading-tight">
                     {badge.title}
                   </p>
                   <p className="text-[10px] font-mono font-bold text-amber-600">
@@ -321,13 +378,9 @@ export const AchievementsPage: React.FC = () => {
       >
         {selectedBadge && (
           <div className="space-y-6 pt-3 text-center">
-            {/* BIG BADGE DISPLAY */}
-            <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
-              <div
-                className={`w-28 h-28 rounded-3xl bg-gradient-to-br ${selectedBadge.iconBg} shadow-2xl flex items-center justify-center relative border-4 border-white`}
-              >
-                <selectedBadge.icon className="w-14 h-14 text-white drop-shadow-lg" />
-              </div>
+            {/* BIG 3D HEXAGON BADGE DISPLAY */}
+            <div className="py-2 flex justify-center">
+              <Hexagonal3DBadge badge={selectedBadge} size="lg" />
             </div>
 
             <div>

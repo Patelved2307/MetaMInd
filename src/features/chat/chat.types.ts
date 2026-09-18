@@ -1,4 +1,20 @@
-export type PluginId = 'concept-explainer' | 'code-debugger' | 'exam-coach' | 'math-logic';
+export type PluginId =
+  | 'concept-explainer'
+  | 'code-debugger'
+  | 'exam-coach'
+  | 'math-logic'
+  | 'math-latex'
+  | 'code-runner'
+  | 'diagram-architect'
+  | 'flashcard-gen'
+  | 'academic-scholar'
+  | 'socratic-tutor'
+  | 'eli5-analogy'
+  | 'mnemonic-master'
+  | 'feynman-coach'
+  | 'mock-interviewer'
+  | 'polyglot-translator'
+  | string;
 
 export interface ChatPlugin {
   id: PluginId;
@@ -6,6 +22,24 @@ export interface ChatPlugin {
   icon: string;
   description: string;
   badge: string;
+  category?: 'Core' | 'STEM & Math' | 'Engineering' | 'Active Recall' | 'Research' | 'Customization' | 'Custom';
+  isInstalled?: boolean;
+  isEnabled?: boolean;
+  downloadsCount?: string;
+  version?: string;
+  author?: string;
+  features?: string[];
+  isCustom?: boolean;
+  customPrompt?: string;
+}
+
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  previewUrl?: string;
+  content?: string;
 }
 
 export type QuestionScenarioType =
@@ -49,6 +83,12 @@ export interface CognitiveDiagnostic {
   subject?: string;
   scenario?: PredictedScenario;
   followUpPrompts?: string[];
+  activePluginData?: {
+    pluginId: PluginId;
+    title: string;
+    details: string;
+    items?: string[];
+  };
 }
 
 export interface ChatMessage {
@@ -58,6 +98,7 @@ export interface ChatMessage {
   timestamp: string;
   diagnostic?: CognitiveDiagnostic;
   selectedQuizAnswer?: { [questionId: string]: number };
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatSession {
@@ -67,4 +108,7 @@ export interface ChatSession {
   createdAt: string;
   updatedAt: string;
   messages: ChatMessage[];
+  pinned?: boolean;
+  sharedId?: string;
+  sharedAt?: string;
 }

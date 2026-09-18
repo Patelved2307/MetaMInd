@@ -3,6 +3,7 @@ import type {
   PluginId,
   ChatPlugin,
   CognitiveDiagnostic,
+  ChatAttachment,
 } from './chat.types';
 import { ACADEMIC_DATASET, type TopicKnowledgeItem } from './academicDataset';
 import {
@@ -12,37 +13,196 @@ import {
 } from './nlpPredictor';
 
 const CHAT_STORAGE_KEY = 'metamind_chat_sessions_v1';
+const INSTALLED_PLUGINS_KEY = 'metamind_installed_plugins_v1';
+const USER_CUSTOM_PLUGINS_KEY = 'metamind_user_custom_plugins_v1';
+const SHARED_CHATS_PREFIX = 'metamind_shared_chat_';
 
-export const CHAT_PLUGINS: ChatPlugin[] = [
+export const FULL_PLUGIN_CATALOG: ChatPlugin[] = [
   {
     id: 'concept-explainer',
     name: 'Concept Tutor',
     icon: '🧠',
-    description: 'Diagnoses doubts & deep explanations',
+    description: 'Diagnoses student doubts, prerequisite gaps, and provides intuitive explanations.',
     badge: 'Core',
+    category: 'Core',
+    isInstalled: true,
+    isEnabled: true,
+    downloadsCount: '48.2k',
+    version: '2.4.0',
+    author: 'MetaMind AI Core',
+    features: ['Cognitive gap diagnostics', 'Prerequisite tree breakdown', 'Interactive quick-check quiz'],
   },
   {
     id: 'code-debugger',
-    name: 'Code & Syntax',
+    name: 'Code & Syntax Debugger',
     icon: '💻',
-    description: 'Finds logic bugs & syntax errors',
+    description: 'Finds logic bugs, runtime errors, and refactors code for maximum efficiency.',
     badge: 'Dev',
+    category: 'Engineering',
+    isInstalled: true,
+    isEnabled: true,
+    downloadsCount: '39.8k',
+    version: '1.9.2',
+    author: 'MetaMind Systems',
+    features: ['Syntax & runtime bug detector', 'Line-by-line fix breakdown', 'Best practice patterns'],
   },
   {
-    id: 'exam-coach',
-    name: 'Exam Drills',
-    icon: '🎯',
-    description: 'High-yield exam test preparation',
-    badge: 'Exam',
-  },
-  {
-    id: 'math-logic',
-    name: 'Math & Logic',
+    id: 'math-latex',
+    name: 'LaTeX Math & Derivations',
     icon: '📐',
-    description: 'Step-by-step formula derivations',
-    badge: 'Logic',
+    description: 'Generates step-by-step calculus, algebra, and discrete math proofs with clean LaTeX formatting.',
+    badge: 'Math',
+    category: 'STEM & Math',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '31.5k',
+    version: '2.1.0',
+    author: 'MIT OpenLearn Collab',
+    features: ['Step-by-step formula derivations', 'LaTeX math formulas', 'Symbolic variable verification'],
+  },
+  {
+    id: 'code-runner',
+    name: 'Python Sandbox & Big-O',
+    icon: '⚡',
+    description: 'Generates runnable Python/JS algorithms with Big-O time and space complexity audits.',
+    badge: 'Exec',
+    category: 'Engineering',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '27.4k',
+    version: '1.4.1',
+    author: 'Algorithmic Lab',
+    features: ['Runnable code blocks', 'Big-O time/space complexity', 'Test case boundary suites'],
+  },
+  {
+    id: 'diagram-architect',
+    name: 'System Architecture & Diagrams',
+    icon: '📊',
+    description: 'Creates ASCII flowcharts, state transitions, and Mermaid diagrams for distributed systems.',
+    badge: 'Visual',
+    category: 'Engineering',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '22.9k',
+    version: '2.0.0',
+    author: 'CloudSys Institute',
+    features: ['Visual system flowcharts', 'Component architecture blocks', 'Data flow lifecycle maps'],
+  },
+  {
+    id: 'flashcard-gen',
+    name: 'Active Recall & Flashcards',
+    icon: '🗂️',
+    description: 'Automatically synthesizes chat discussions into spaced-repetition flashcards and revision decks.',
+    badge: 'Recall',
+    category: 'Active Recall',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '35.1k',
+    version: '3.0.2',
+    author: 'Cognitive Science Guild',
+    features: ['One-click flashcard cards', 'Spaced-repetition cues', 'Exam revision summary'],
+  },
+  {
+    id: 'academic-scholar',
+    name: 'Academic Scholar & Citations',
+    icon: '📚',
+    description: 'Extracts verified academic references, peer-reviewed citations, and publication summaries.',
+    badge: 'Research',
+    category: 'Research',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '19.3k',
+    version: '1.2.0',
+    author: 'ScholarNet Labs',
+    features: ['IEEE & APA format citations', 'Peer-reviewed abstracts', 'Methodology comparisons'],
+  },
+  {
+    id: 'socratic-tutor',
+    name: 'Socratic Tutor Mode',
+    icon: '🏛️',
+    description: 'Guides you through doubts using guided questions rather than just handing you the answer.',
+    badge: 'Tutor',
+    category: 'Core',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '18.7k',
+    version: '1.5.0',
+    author: 'Pedagogy Collective',
+    features: ['Guided discovery dialogue', 'Critical thinking probes', 'Self-paced verification'],
+  },
+  {
+    id: 'eli5-analogy',
+    name: 'ELI5 Intuitive Metaphors',
+    icon: '🎈',
+    description: 'Explains complex theorems and abstract algorithms using simple everyday real-world analogies.',
+    badge: 'Analogy',
+    category: 'Customization',
+    isInstalled: true,
+    isEnabled: false,
+    downloadsCount: '44.3k',
+    version: '2.0.0',
+    author: 'MetaMind Pedagogy',
+    features: ['Zero-jargon explanations', 'Everyday mental models', 'Visual metaphors'],
+  },
+  {
+    id: 'mnemonic-master',
+    name: 'Exam Cram & Mnemonics',
+    icon: '💡',
+    description: 'Generates high-yield memory acronyms, visual pegs, and exam revision cheat-sheet tables.',
+    badge: 'Memory',
+    category: 'Customization',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '38.2k',
+    version: '1.8.0',
+    author: 'NeuroLearn Institute',
+    features: ['Acronyms & memory pegs', 'High-yield exam traps', 'Revision cheat-sheets'],
+  },
+  {
+    id: 'feynman-coach',
+    name: 'Feynman Technique Coach',
+    icon: '🎓',
+    description: 'Tests your depth by challenging you to explain back concepts and revealing hidden blind spots.',
+    badge: 'Mastery',
+    category: 'Customization',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '29.1k',
+    version: '1.4.0',
+    author: 'Richard Feynman Lab',
+    features: ['Reverse diagnostic testing', 'Blind spot detector', 'Plain-English verification'],
+  },
+  {
+    id: 'mock-interviewer',
+    name: 'FAANG & Viva Interviewer',
+    icon: '🎯',
+    description: 'Drills you with realistic technical interview follow-up questions, edge cases, and rubrics.',
+    badge: 'Career',
+    category: 'Customization',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '33.6k',
+    version: '2.2.0',
+    author: 'InterviewReady Labs',
+    features: ['Technical pressure drills', 'Engineering trade-offs', 'Viva defense questions'],
+  },
+  {
+    id: 'polyglot-translator',
+    name: 'Polyglot & Multilingual Glossary',
+    icon: '🌐',
+    description: 'Generates multilingual concept glossaries in Spanish, French, German, Hindi, and Japanese.',
+    badge: 'Global',
+    category: 'Customization',
+    isInstalled: false,
+    isEnabled: false,
+    downloadsCount: '21.4k',
+    version: '1.3.0',
+    author: 'Linguistics AI Hub',
+    features: ['Multilingual translations', 'Etymology insights', 'Global academic terms'],
   },
 ];
+
+export const CHAT_PLUGINS = FULL_PLUGIN_CATALOG;
 
 export const chatService = {
   getSessions(): ChatSession[] {
@@ -63,12 +223,13 @@ export const chatService = {
       pluginId: 'concept-explainer',
       createdAt: new Date(Date.now() - 3600000).toISOString(),
       updatedAt: new Date().toISOString(),
+      pinned: false,
       messages: [
         {
           id: 'msg_welcome_ai',
           sender: 'assistant',
           content:
-            "Hello! I am your MetaMind AI Cognitive Tutor. Ask any doubt, paste code, compare architectures, or troubleshoot a bug. I will automatically predict your question type, diagnose conceptual gaps, and generate customized study solutions!",
+            "Hello! I am your MetaMind AI Cognitive Tutor. Ask any doubt, attach course documents, paste code, compare architectures, or troubleshoot a bug. I will automatically diagnose conceptual gaps, apply your installed plugins, and generate customized study solutions!",
           timestamp: new Date(Date.now() - 3600000).toISOString(),
         },
       ],
@@ -89,6 +250,7 @@ export const chatService = {
       pluginId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      pinned: false,
       messages: [],
     };
     const current = this.getSessions();
@@ -102,10 +264,220 @@ export const chatService = {
     return updated;
   },
 
+  pinSession(sessionId: string, pinned: boolean): ChatSession[] {
+    const updated = this.getSessions().map((s) =>
+      s.id === sessionId ? { ...s, pinned, updatedAt: new Date().toISOString() } : s
+    );
+    this.saveSessions(updated);
+    return updated;
+  },
+
+  renameSession(sessionId: string, newTitle: string): ChatSession[] {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return this.getSessions();
+    const updated = this.getSessions().map((s) =>
+      s.id === sessionId ? { ...s, title: trimmed, updatedAt: new Date().toISOString() } : s
+    );
+    this.saveSessions(updated);
+    return updated;
+  },
+
+  /* ---------------- Custom Plugins Management ---------------- */
+  getCustomPlugins(): ChatPlugin[] {
+    try {
+      const raw = localStorage.getItem(USER_CUSTOM_PLUGINS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  createCustomPlugin(data: {
+    name: string;
+    icon: string;
+    description: string;
+    customPrompt: string;
+    category?: 'Core' | 'STEM & Math' | 'Engineering' | 'Active Recall' | 'Research' | 'Customization' | 'Custom';
+  }): ChatPlugin {
+    const id = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newPlugin: ChatPlugin = {
+      id,
+      name: data.name.trim(),
+      icon: data.icon || '⚡',
+      description: data.description.trim() || 'Custom user prompt customization module.',
+      badge: 'Custom',
+      category: data.category || 'Custom',
+      isInstalled: true,
+      isEnabled: true,
+      downloadsCount: '1',
+      version: '1.0.0',
+      author: 'You',
+      features: ['Personalized reasoning logic', 'Direct prompt augmentation'],
+      isCustom: true,
+      customPrompt: data.customPrompt.trim(),
+    };
+
+    const current = this.getCustomPlugins();
+    const updated = [newPlugin, ...current];
+    localStorage.setItem(USER_CUSTOM_PLUGINS_KEY, JSON.stringify(updated));
+    return newPlugin;
+  },
+
+  deleteCustomPlugin(pluginId: string): ChatPlugin[] {
+    const current = this.getCustomPlugins().filter((p) => p.id !== pluginId);
+    localStorage.setItem(USER_CUSTOM_PLUGINS_KEY, JSON.stringify(current));
+    return this.getInstalledPlugins();
+  },
+
+  /* ---------------- Plugin Marketplace Management ---------------- */
+  getInstalledPlugins(): ChatPlugin[] {
+    const customList = this.getCustomPlugins();
+    const allCatalog = [...FULL_PLUGIN_CATALOG, ...customList];
+
+    try {
+      const raw = localStorage.getItem(INSTALLED_PLUGINS_KEY);
+      if (raw) {
+        const saved: Record<string, { isInstalled: boolean; isEnabled: boolean }> = JSON.parse(raw);
+        return allCatalog.map((p) => ({
+          ...p,
+          isInstalled: saved[p.id] !== undefined ? saved[p.id].isInstalled : (p.isCustom ? true : p.isInstalled),
+          isEnabled: saved[p.id] !== undefined ? saved[p.id].isEnabled : (p.isCustom ? true : p.isEnabled),
+        }));
+      }
+    } catch {
+      // fallback
+    }
+    return allCatalog;
+  },
+
+  savePluginsState(plugins: ChatPlugin[]) {
+    const map: Record<string, { isInstalled: boolean; isEnabled: boolean }> = {};
+    plugins.forEach((p) => {
+      map[p.id] = { isInstalled: !!p.isInstalled, isEnabled: !!p.isEnabled };
+    });
+    localStorage.setItem(INSTALLED_PLUGINS_KEY, JSON.stringify(map));
+  },
+
+  installPlugin(pluginId: PluginId): ChatPlugin[] {
+    const list = this.getInstalledPlugins().map((p) =>
+      p.id === pluginId ? { ...p, isInstalled: true, isEnabled: true } : p
+    );
+    this.savePluginsState(list);
+    return list;
+  },
+
+  uninstallPlugin(pluginId: PluginId): ChatPlugin[] {
+    const list = this.getInstalledPlugins().map((p) =>
+      p.id === pluginId ? { ...p, isInstalled: false, isEnabled: false } : p
+    );
+    this.savePluginsState(list);
+    return list;
+  },
+
+  togglePlugin(pluginId: PluginId): ChatPlugin[] {
+    const list = this.getInstalledPlugins().map((p) =>
+      p.id === pluginId ? { ...p, isEnabled: !p.isEnabled } : p
+    );
+    this.savePluginsState(list);
+    return list;
+  },
+
+  /* ---------------- Chat Sharing & Forking ---------------- */
+  saveSharedChat(session: ChatSession): { shareId: string; shareUrl: string } {
+    const shareId = `share_${session.id.replace('session_', '')}_${Date.now().toString(36)}`;
+    const sharedBundle: ChatSession = {
+      ...session,
+      sharedId: shareId,
+      sharedAt: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(`${SHARED_CHATS_PREFIX}${shareId}`, JSON.stringify(sharedBundle));
+    } catch {
+      // ignore
+    }
+
+    // URL safe base64 encoding payload fallback so link works across devices
+    let payload = '';
+    try {
+      const minimal = {
+        title: session.title,
+        pluginId: session.pluginId,
+        createdAt: session.createdAt,
+        messages: session.messages.slice(-10), // keep recent 10 messages for link brevity
+      };
+      payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(minimal)))));
+    } catch {
+      // fallback
+    }
+
+    const shareUrl = `${window.location.origin}/shared-chat/${shareId}${payload ? `?data=${payload}` : ''}`;
+    return { shareId, shareUrl };
+  },
+
+  getSharedChat(shareId: string, urlDataParam?: string | null): ChatSession | null {
+    // 1. Try localStorage
+    try {
+      const raw = localStorage.getItem(`${SHARED_CHATS_PREFIX}${shareId}`);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {
+      // continue
+    }
+
+    // 2. Try URL parameter data
+    if (urlDataParam) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(decodeURIComponent(urlDataParam))));
+        const parsed = JSON.parse(decoded);
+        return {
+          id: `session_imported_${Date.now()}`,
+          title: parsed.title || 'Shared Discussion',
+          pluginId: parsed.pluginId || 'concept-explainer',
+          createdAt: parsed.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          messages: parsed.messages || [],
+          sharedId: shareId,
+        };
+      } catch {
+        // continue
+      }
+    }
+
+    return null;
+  },
+
+  forkSharedChat(sharedSession: ChatSession): ChatSession {
+    const newSession: ChatSession = {
+      ...sharedSession,
+      id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: `${sharedSession.title} (Continued)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      pinned: false,
+      messages: [...sharedSession.messages],
+    };
+
+    const current = this.getSessions();
+    this.saveSessions([newSession, ...current]);
+    return newSession;
+  },
+
   /**
-   * Main AI response generation with Question Scenario Prediction
+   * Main AI response generation with Question Scenario Prediction,
+   * Attached Document Integration, and Applied Plugins
    */
-  generateCognitiveResponse(userPrompt: string, pluginId: PluginId = 'concept-explainer'): {
+  generateCognitiveResponse(
+    userPrompt: string,
+    pluginId: PluginId = 'concept-explainer',
+    activePluginIds: PluginId[] = [],
+    attachments: ChatAttachment[] = []
+  ): {
     content: string;
     diagnostic?: CognitiveDiagnostic;
   } {
@@ -262,15 +634,151 @@ export const chatService = {
       }
     }
 
-    // Confident match threshold
+    let res: { content: string; diagnostic?: CognitiveDiagnostic };
     if (bestMatch && highestScore >= 20) {
-      return this.buildScenarioDiagnosticResponse(userPrompt, bestMatch, req);
+      res = this.buildScenarioDiagnosticResponse(userPrompt, bestMatch, req);
+    } else {
+      res = this.buildDynamicScenarioDiagnosticResponse(userPrompt, req);
     }
 
-    // =========================================================================
-    // 9. DYNAMIC SCENARIO GENERATOR (For topics outside static dictionary)
-    // =========================================================================
-    return this.buildDynamicScenarioDiagnosticResponse(userPrompt, req);
+    // Acknowledge attached documents if present
+    if (attachments && attachments.length > 0) {
+      const attachInfo = `> 📎 **Attached Document Analyzed**: ${attachments
+        .map((a) => `\`${a.name}\` (${(a.size / 1024).toFixed(1)} KB)`)
+        .join(', ')}\n> *Extracted contextual criteria and mapped coursework objectives against your prompt.*\n\n`;
+      res.content = attachInfo + res.content;
+    }
+
+    // Apply active plugins extensions
+    const pluginsToApply = Array.from(new Set([pluginId, ...activePluginIds]));
+
+    if (pluginsToApply.includes('math-latex')) {
+      const topicName = res.diagnostic?.topic || 'Mathematical Optimization';
+      res.content += `\n\n### 📐 LaTeX Mathematical Derivation (${topicName})
+$$f(x) = \\sum_{k=0}^{\\infty} \\frac{f^{(k)}(a)}{k!} (x - a)^k$$
+$$\\lim_{h \\to 0} \\frac{f(x + h) - f(x)}{h} = f'(x)$$
+- **Derivation Step 1**: Identify differential constraints and establish coordinate boundaries.
+- **Derivation Step 2**: Solve characteristic equation: $r^2 + 2\\zeta\\omega_n r + \\omega_n^2 = 0$.
+- **Step 3 (Proof Check)**: Verified continuous on $[a, b]$ and differentiable on $(a, b)$.`;
+    }
+
+    if (pluginsToApply.includes('code-runner')) {
+      const topicName = res.diagnostic?.topic || 'Algorithm';
+      res.content += `\n\n### ⚡ Python Sandbox & Complexity Audit
+\`\`\`python
+def solve_${clean.slice(0, 15).replace(/\\s+/g, '_')}(dataset):
+    """
+    Optimized algorithm implementation for ${topicName}
+    Time Complexity: O(n log n) | Auxiliary Space: O(1)
+    """
+    if not dataset:
+        return []
+    return sorted(dataset)
+
+# Verification Test Run
+test_sample = [42, 17, 88, 3, 99]
+print("Sandbox Execution Output:", solve_${clean.slice(0, 15).replace(/\\s+/g, '_')}(test_sample))
+\`\`\`
+- **Time Complexity**: $\\mathcal{O}(n \\log n)$ via divide-and-conquer partition.
+- **Space Complexity**: $\\mathcal{O}(1)$ in-place auxiliary memory allocation.`;
+    }
+
+    if (pluginsToApply.includes('diagram-architect')) {
+      const topicName = res.diagnostic?.topic || 'Architecture';
+      res.content += `\n\n### 📊 System Architecture & Data Flow Diagram
+\`\`\`
++-------------------------------------------------------------+
+|                   Client Request Layer                      |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|              Cognitive Controller (${topicName})            |
++-------------------------------------------------------------+
+         |                                           |
+         v                                           v
++--------------------------+              +--------------------------+
+|  Validation & Invariants |              | State Partition Store    |
++--------------------------+              +--------------------------+
+\`\`\``;
+    }
+
+    if (pluginsToApply.includes('flashcard-gen')) {
+      const topicName = res.diagnostic?.topic || 'Topic';
+      res.content += `\n\n### 🗂️ Active Recall Flashcard Deck
+1. **Q**: What is the core invariant of ${topicName}?
+   *A*: State constraints must be satisfied across all recursive iterations.
+2. **Q**: What is the most common student pitfall in ${topicName}?
+   *A*: Neglecting boundary conditions (empty inputs, single nodes, maximum capacity).
+3. **Q**: How do you verify runtime correctness?
+   *A*: Apply the inductive step and verify termination of the loop invariant.`;
+    }
+
+    if (pluginsToApply.includes('academic-scholar')) {
+      res.content += `\n\n### 📚 Academic Scholar Citations & Literature
+1. **Vaswani et al. (2017)** — *"Attention Is All You Need"*, Advances in Neural Information Processing Systems (NeurIPS), pp. 5998–6008.
+2. **Knuth, D. E. (1998)** — *"The Art of Computer Programming: Fundamental Algorithms"*, Addison-Wesley, 3rd Edition.
+3. **Cormen, T. H. et al. (2022)** — *"Introduction to Algorithms (4th ed.)"*, The MIT Press.`;
+    }
+
+    if (pluginsToApply.includes('socratic-tutor')) {
+      res.content += `\n\n### 🏛️ Socratic Reflection Question
+> *Before applying this solution directly: If the input size grew by $100\\times$, which specific constraint would fail first, and how would you restructure the invariant to prevent degradation?*`;
+    }
+
+    if (pluginsToApply.includes('eli5-analogy')) {
+      const topicName = res.diagnostic?.topic || 'this concept';
+      res.content += `\n\n### 🎈 ELI5 Real-World Analogy (${topicName})
+Imagine **${topicName}** like an airport baggage claim:
+• **The Input**: Bags loaded onto the conveyor belt represent incoming state inputs.
+• **The State Invariant**: Every carousel partition guarantees items are inspected in sequential arrival order without dropping baggage.
+• **The Edge Case**: An empty flight means the belt safely idles without throwing an error!`;
+    }
+
+    if (pluginsToApply.includes('mnemonic-master')) {
+      res.content += `\n\n### 💡 High-Yield Exam Mnemonic & Revision Pegs
+• **Core Recall Peg**: \`F.A.S.T.\`
+  - **F**ormulate base constraints first.
+  - **A**pply the invariant transition.
+  - **S**can null / empty / max edge bounds.
+  - **T**erminate with proven loop convergence.
+• ⚡ **Top Exam Trap**: Always double-check array boundary indices to avoid off-by-one memory leaks!`;
+    }
+
+    if (pluginsToApply.includes('feynman-coach')) {
+      const topicName = res.diagnostic?.topic || 'this concept';
+      res.content += `\n\n### 🎓 Feynman Technique Challenge
+> **Verify Your Depth**: If you had to explain the single most crucial mechanism in **${topicName}** to a 10-year-old in two sentences without using technical buzzwords, what would you say? Test yourself now to expose any hidden assumptions!`;
+    }
+
+    if (pluginsToApply.includes('mock-interviewer')) {
+      res.content += `\n\n### 🎯 FAANG / Viva Follow-Up Pressure Question
+> **Technical Interviewer**: *"Good. Now suppose this system experiences an unannounced cross-datacenter network partition and traffic surges by $10^4\\times$. Under the CAP theorem, do you sacrifice consistency or latency, and how do you prevent data corruption during recovery?"*`;
+    }
+
+    if (pluginsToApply.includes('polyglot-translator')) {
+      const topicName = res.diagnostic?.topic || 'Core Concept';
+      res.content += `\n\n### 🌐 Multilingual Concept Glossaries (${topicName})
+| Language | Academic Term | Meaning in Context |
+| :--- | :--- | :--- |
+| **Spanish** | *Optimización Adaptativa* | Algoritmo iterativo según restricciones |
+| **French** | *Optimisation Adaptative* | Amélioration continue selon les conditions |
+| **German** | *Adaptive Optimierung* | Leistungssteigerung nach Systemzustand |
+| **Hindi** | *अनुकूली अनुकूलन (Anukooli Anukoolan)* | परिस्थितियों के अनुसार सर्वोत्तम हल |
+| **Japanese** | *適応的最適化 (Tekiteki Saitekika)* | 状況に応じた最適な処理プロセス |`;
+    }
+
+    // Check for user-defined custom plugins
+    const customPlugins = this.getCustomPlugins();
+    customPlugins.forEach((customPlug) => {
+      if (pluginsToApply.includes(customPlug.id) && customPlug.customPrompt) {
+        res.content += `\n\n### ${customPlug.icon} Custom Module Active: ${customPlug.name}
+> **Custom Rule**: ${customPlug.customPrompt}
+*Verified compliance with your custom study preference.*`;
+      }
+    });
+
+    return res;
   },
 
   /**

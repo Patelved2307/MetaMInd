@@ -1,10 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/features/auth';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Sparkles, ArrowRight, ArrowLeft, Lock } from 'lucide-react';
+import { AuthVisualSide } from '@/components/auth/AuthVisualSide';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  AlertCircle,
+} from 'lucide-react';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -16,38 +23,23 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export const SignInPage: React.FC = () => {
   const { signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    rememberMe: true,
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof SignInFormData | 'auth', string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Background Video Fade Logic
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.style.opacity = '0';
-
-    const handleCanPlay = () => {
-      video.play().catch(() => {});
-      video.style.transition = 'opacity 800ms ease-in-out';
-      video.style.opacity = '0.5';
-    };
-
-    video.addEventListener('canplay', handleCanPlay);
-    if (video.readyState >= 3) handleCanPlay();
-
-    return () => video.removeEventListener('canplay', handleCanPlay);
-  }, []);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
     if (errors[name as keyof SignInFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -77,7 +69,9 @@ export const SignInPage: React.FC = () => {
       });
       navigate('/onboarding', { replace: true });
     } catch (err: any) {
-      setErrors({ auth: err.message || 'Invalid credentials. Please check your email and password.' });
+      setErrors({
+        auth: err.message || 'Invalid email or password. Please check your credentials.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -92,139 +86,164 @@ export const SignInPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row relative overflow-hidden">
-      {/* LEFT COLUMN: Unique 3D Video & Editorial Display */}
-      <div className="lg:w-1/2 relative bg-black border-b lg:border-b-0 lg:border-r border-white/10 p-8 lg:p-16 flex flex-col justify-between overflow-hidden min-h-[500px] lg:min-h-screen">
-        {/* Unique Background HD 3D Video Clip for Sign In */}
-        <video
-          ref={videoRef}
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-        />
+    <div className="min-h-screen bg-[#070A12] text-white flex flex-col lg:flex-row relative overflow-hidden">
+      {/* LEFT COLUMN: Clean, Human & Vivid Video Showcase */}
+      <AuthVisualSide
+        videoSrc="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4"
+        headline="Welcome back to your study space."
+        subheadline="Pick up right where you left off and keep building deep mastery in your subjects."
+        quote="MetaMind makes complex topics click faster. It feels like having a brilliant tutor by your side."
+        authorName="Elena Rostova"
+        authorRole="Computer Science • 3rd Year"
+        avatarSrc="/assets/avatars/female/lofi_girl.png"
+      />
 
-        {/* Liquid Glass Overlay Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30 pointer-events-none" />
-        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[#B9A7FF]/15 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top Bar with Back Button & Brand Logo */}
-        <div className="relative z-10 flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <img src="/assets/brand/metamind_logo_white.png" alt="MetaMind" className="h-10 w-auto object-contain" />
-          </Link>
-
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all cursor-pointer shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4 text-[#B9A7FF]" />
-            <span>Back to Home</span>
-          </Link>
-        </div>
-
-        {/* Editorial Headline */}
-        <div className="relative z-10 my-12 lg:my-0 max-w-lg space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full liquid-glass text-xs font-medium text-[#B9A7FF] border border-[#B9A7FF]/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Welcome Back</span>
-          </div>
-
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-white font-normal leading-[1.12] tracking-tight">
-            "Welcome back to your adaptive learning graph."
-          </h1>
-
-          <p className="text-sm text-white/70 leading-relaxed font-sans">
-            Pick up right where you left off. Continue mastering concepts and building deep subject clarity.
-          </p>
-        </div>
-
-        {/* Security Pill */}
-        <div className="relative z-10 flex items-center gap-2 text-xs text-white/60">
-          <Lock className="w-4 h-4 text-[#8DD3FF]" />
-          <span>Secure Session Authentication</span>
-        </div>
-      </div>
-
-      {/* RIGHT COLUMN: Sign In Form */}
-      <div className="lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-black relative z-10">
-        <div className="w-full max-w-md space-y-6">
-          <div>
-            <h2 className="text-3xl font-semibold text-white tracking-tight font-display">
+      {/* RIGHT COLUMN: Clean, Modern & Human Input Section */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-16 relative z-10 bg-[#070A12]">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="w-full max-w-md space-y-6"
+        >
+          {/* Header */}
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-display">
               Sign in to your account
             </h2>
-            <p className="mt-2 text-xs sm:text-sm text-white/60 font-sans">
-              Enter your credentials to access your personalized learning dashboard.
+            <p className="text-xs sm:text-sm text-slate-400 font-sans">
+              Enter your credentials below to access your learning dashboard.
             </p>
           </div>
 
+          {/* Error Message */}
           {errors.auth && (
-            <div className="p-3.5 rounded-xl bg-[#FF8B8B]/10 border border-[#FF8B8B]/30 text-xs text-[#FF8B8B]">
-              {errors.auth}
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 shadow-sm">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{errors.auth}</span>
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <Input
-              label="Email Address"
-              name="email"
-              type="email"
-              placeholder="alex@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-            />
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Email Address</span>
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full bg-[#0D121F] border text-white placeholder:text-slate-500 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 ${
+                    errors.email
+                      ? 'border-rose-500 focus:ring-2 focus:ring-rose-500/25'
+                      : 'border-slate-800 hover:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25'
+                  }`}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-xs text-rose-400 font-medium">{errors.email}</p>
+              )}
+            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-white/70">Password</label>
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Password</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => alert('Password reset link sent if registered.')}
-                  className="text-xs text-[#8DD3FF] hover:underline cursor-pointer"
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors cursor-pointer"
                 >
                   Forgot Password?
                 </button>
               </div>
-              <Input
-                name="password"
-                type="password"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-                error={errors.password}
-              />
+
+              <div className="relative flex items-center">
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full bg-[#0D121F] border text-white placeholder:text-slate-500 rounded-xl px-4 py-3 pr-11 text-sm outline-none transition-all duration-200 ${
+                    errors.password
+                      ? 'border-rose-500 focus:ring-2 focus:ring-rose-500/25'
+                      : 'border-slate-800 hover:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 p-1.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-rose-400 font-medium">{errors.password}</p>
+              )}
             </div>
 
-            <Button
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-slate-300 select-none">
+                <input
+                  type="checkbox"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onChange={handleChange}
+                  className="rounded bg-[#0D121F] border-slate-700 text-indigo-600 focus:ring-indigo-500/30 accent-indigo-600 cursor-pointer"
+                />
+                <span>Remember me on this device</span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
               type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full mt-2 bg-[#8DD3FF] text-[#05070A] hover:bg-[#a6deff] font-semibold cursor-pointer"
-              isLoading={isSubmitting}
-              rightIcon={<ArrowRight className="w-4 h-4" />}
+              disabled={isSubmitting}
+              className="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
             >
-              Sign In
-            </Button>
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </form>
 
           {/* Social Divider */}
-          <div className="relative flex items-center justify-center my-6">
-            <div className="absolute inset-0 border-t border-white/10" />
-            <span className="relative px-3 bg-black text-[11px] text-white/50 uppercase tracking-wider">
+          <div className="relative flex items-center justify-center my-4">
+            <div className="absolute inset-0 border-t border-slate-800" />
+            <span className="relative px-3 bg-[#070A12] text-[11px] text-slate-400 uppercase tracking-wider font-mono">
               Or continue with
             </span>
           </div>
 
-          <Button
-            variant="secondary"
-            className="w-full flex items-center justify-center gap-2 text-xs liquid-glass text-white hover:bg-white/10 cursor-pointer"
+          {/* Google Sign-In */}
+          <button
+            type="button"
             onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-[#0D121F] hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-white transition-all duration-200 cursor-pointer shadow-sm group hover:scale-[1.01] active:scale-[0.99]"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#EA4335"
                 d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 8.9 5 12 5z"
@@ -242,16 +261,20 @@ export const SignInPage: React.FC = () => {
                 d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
               />
             </svg>
-            Sign in with Google
-          </Button>
+            <span>Sign in with Google</span>
+          </button>
 
-          <p className="text-xs text-white/60 text-center pt-2">
+          {/* Link to Sign Up */}
+          <p className="text-xs text-slate-400 text-center pt-2">
             Don't have an account?{' '}
-            <Link to="/sign-up" className="text-[#8DD3FF] font-medium hover:underline cursor-pointer">
-              Create Account
+            <Link
+              to="/sign-up"
+              className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline transition-colors cursor-pointer"
+            >
+              Create Account for Free
             </Link>
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

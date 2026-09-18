@@ -6,43 +6,40 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
 
-  --color-bg-primary: #07090E;
-  --color-bg-secondary: #0D1117;
-  --color-bg-elevated: #151B26;
+  --color-bg-primary: #F8FAFC;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
 
-  --color-text-primary: #F8FAFC;
-  --color-text-muted: #94A3B8;
+  --color-text-primary: #0F172A;
+  --color-text-muted: #64748B;
 
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: #E2E8F0;
 
-  --color-accent-ai: #38BDF8;
-  --color-accent-secondary: #A855F7;
+  --color-accent-ai: #4F46E5;
+  --color-accent-secondary: #3B82F6;
 
-  --color-status-success: #22C55E;
+  --color-status-success: #10B981;
   --color-status-warning: #F59E0B;
   --color-status-error: #EF4444;
 }
 
 :root {
-  --bg-primary: #07090E;
-  --bg-secondary: #0D1117;
-  --bg-elevated: #151B26;
-  --text-primary: #F8FAFC;
-  --text-muted: #94A3B8;
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
+  --border-subtle: #E2E8F0;
 }
 
 body {
-  background-color: #07090E;
-  color: #F8FAFC;
+  background-color: #F8FAFC;
+  color: #0F172A;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
 }
 
 /* Enforce Hand Pointer Cursor across all interactive controls */
@@ -162,4 +159,29 @@ input[type="radio"] {
     box-shadow: 0.5em 1em rgba(61, 184, 143, 0.75),
               -0.5em -1em rgba(233, 169, 32, 0.75);
   }
+}
+
+/* Sleek Modern Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+/* Hexagon Clip Path */
+.clip-hexagon {
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }

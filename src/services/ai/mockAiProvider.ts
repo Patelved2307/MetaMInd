@@ -150,11 +150,13 @@ export const mockAiProvider = {
       ];
     }
 
+    const cleanTopic = (topic || 'Core Principles').replace(/[\.\s]+$/, '').trim();
+
     return [
       {
         id: 'q1_gen',
         conceptName: 'Fundamental Principles',
-        question: `What is the primary step required to thoroughly master ${topic}?`,
+        question: `What is the primary step required to thoroughly master ${cleanTopic}?`,
         questionType: 'MULTIPLE_CHOICE',
         options: [
           'Deconstructing complex mechanisms into fundamental prerequisite steps',

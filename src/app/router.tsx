@@ -7,6 +7,7 @@ import { ProtectedRoute, OnboardingRoute } from '@/features/auth/ProtectedRoute'
 import { LandingPage } from '@/pages/public/LandingPage';
 import { SignInPage } from '@/pages/public/SignInPage';
 import { SignUpPage } from '@/pages/public/SignUpPage';
+import { SharedChatPage } from '@/pages/public/SharedChatPage';
 
 // Onboarding page
 import { OnboardingPage } from '@/pages/app/OnboardingPage';
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
     ],
+  },
+  {
+    path: '/shared-chat/:shareId',
+    element: <SharedChatPage />,
   },
   {
     path: '/onboarding',

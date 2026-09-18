@@ -370,11 +370,17 @@ export const LearningMapPage: React.FC = () => {
       {/* Top Header & Search */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold tracking-wide uppercase flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-indigo-500" />
+              MetaMind Guided Student Journey
+            </span>
+          </div>
           <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
             Hey {firstName},
           </h1>
           <p className="text-sm sm:text-base text-slate-500 font-sans mt-1">
-            Let's find a perfect course for your career
+            Your structured path from beginner concepts to certified subject mastery
           </p>
         </div>
 
@@ -396,6 +402,56 @@ export const LearningMapPage: React.FC = () => {
               <X className="w-3.5 h-3.5" />
             </button>
           )}
+        </div>
+      </div>
+
+      {/* GAMIFIED STUDENT MASTERY JOURNEY ROADMAP */}
+      <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-1/3 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left stats */}
+          <div className="space-y-2 max-w-sm">
+            <div className="flex items-center gap-2">
+              <img
+                src="/assets/brand/metamind_icon.png"
+                alt="MetaMind"
+                className="w-6 h-6 object-contain"
+              />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-300">
+                4-Stage Adaptive Cycle
+              </span>
+            </div>
+            <h3 className="text-xl font-display font-bold text-white">
+              Learn Actively, Retain Forever
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Never get stuck on boring lectures. MetaMind tests what you know first, breaks down prerequisites, and rewards your consistency.
+            </p>
+          </div>
+
+          {/* 4 Interactive Journey Nodes */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+            {[
+              { step: '01', title: 'Pick Chapter', desc: 'Syllabus roadmap', icon: '🗺️', color: 'border-blue-500/40 bg-blue-500/10' },
+              { step: '02', title: 'Diagnostic', desc: 'Pinpoint exact gaps', icon: '🧪', color: 'border-emerald-500/40 bg-emerald-500/10' },
+              { step: '03', title: 'MetaMind AI', desc: 'Targeted coaching', icon: '💡', color: 'border-amber-500/40 bg-amber-500/10' },
+              { step: '04', title: '3D Badges', desc: 'Certified mastery', icon: '🏆', color: 'border-purple-500/40 bg-purple-500/10' },
+            ].map((s, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-2xl border ${s.color} backdrop-blur-xs space-y-1 transition-transform hover:-translate-y-1`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-lg">{s.icon}</span>
+                  <span className="text-[10px] font-mono font-bold text-slate-400">Step {s.step}</span>
+                </div>
+                <div className="text-xs font-bold text-white">{s.title}</div>
+                <div className="text-[10px] text-slate-300 leading-tight">{s.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
