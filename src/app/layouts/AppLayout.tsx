@@ -1,13 +1,16 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
+import { Terminal } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { NeuralTerminalModal } from '@/components/ui/NeuralTerminalModal';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 
 export const AppLayout: React.FC = () => {
   const { profile, user } = useAuth();
   const location = useLocation();
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
@@ -89,7 +92,28 @@ export const AppLayout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Floating DEBLUN OS Style Terminal Launcher Button */}
+      {!isTerminalOpen && (
+        <button
+          type="button"
+          onClick={() => setIsTerminalOpen(true)}
+          className="fixed bottom-5 right-5 z-40 px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#111827] text-slate-200 border border-slate-700/80 shadow-xl flex items-center gap-2 font-mono text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 group select-none"
+          title="Open MetaMind CLI Terminal"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Terminal className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-6 transition-transform" />
+          <span className="font-bold text-[11px] text-slate-300 group-hover:text-white">CLI Terminal</span>
+        </button>
+      )}
+
+      {/* Interactive Floating Neural Terminal Window */}
+      <NeuralTerminalModal
+        isOpen={isTerminalOpen}
+        onClose={() => setIsTerminalOpen(false)}
+      />
     </div>
   );
 };
+
 

@@ -24,6 +24,7 @@ import { CertificatesPage } from '@/pages/app/CertificatesPage';
 import { GroupStudyPage } from '@/pages/app/GroupStudyPage';
 import { ProfilePage } from '@/pages/app/ProfilePage';
 import { StudentCommitteePage } from '@/pages/app/StudentCommitteePage';
+import { AdminNexusPage } from '@/pages/admin/AdminNexusPage';
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +35,14 @@ export const router = createBrowserRouter([
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
     ],
+  },
+  {
+    path: '/admin',
+    element: <AdminNexusPage />,
+  },
+  {
+    path: '/admin-nexus',
+    element: <AdminNexusPage />,
   },
   {
     path: '/shared-chat/:shareId',

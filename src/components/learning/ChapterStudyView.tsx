@@ -19,7 +19,10 @@ import {
   AlertTriangle,
   FileCheck,
   Target,
+  FileDown,
 } from 'lucide-react';
+import { useAuth } from '@/features/auth';
+import { downloadChapterStudyGuidePdf } from '@/features/chat/studyGuidePdf';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
@@ -45,9 +48,20 @@ export const ChapterStudyView: React.FC<ChapterStudyViewProps> = ({
   isModal = false,
 }) => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const studentName =
+    profile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    user?.email?.split('@')[0] ||
+    'Scholar';
+
   const [content, setContent] = useState<ChapterContent>(() =>
     getChapterContent(courseId, chapterId, chapterTitle)
   );
+
+  const handleExportStudyGuide = () => {
+    downloadChapterStudyGuidePdf(content, studentName);
+  };
 
   // Re-fetch content when chapterId changes
   useEffect(() => {
@@ -137,6 +151,16 @@ export const ChapterStudyView: React.FC<ChapterStudyViewProps> = ({
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">
               {content.difficulty}
             </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportStudyGuide}
+              className="gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50/80 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 shadow-sm cursor-pointer"
+              title="Download comprehensive, printable revision study guide (PDF)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Export Guide PDF</span>
+            </Button>
             {isModal && onClose && (
               <button
                 onClick={onClose}
@@ -359,32 +383,45 @@ export const ChapterStudyView: React.FC<ChapterStudyViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 6. W3SCHOOLS STYLE CODE EXAMPLE & INTERACTIVE TRY IT YOURSELF */}
+      {/* 6. W3SCHOOLS STYLE CODE EXAMPLE & INTERACTIVE TRY IT YOURSELF (DEBLUN OS) */}
       {/* ========================================================================= */}
       <div id="section-code" className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-slate-800" />
-            {content.codeExample.title}
-          </h2>
-          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> W3Schools Sandbox
+          <div className="flex items-center gap-3">
+            <span className="font-londrina text-3xl sm:text-4xl text-slate-400 select-none">
+              06
+            </span>
+            <h2 className="text-lg sm:text-xl font-display font-bold text-slate-900 flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-indigo-600" />
+              {content.codeExample.title}
+            </h2>
+          </div>
+          <span className="text-xs font-bold font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            DEBLUN OS Sandbox
           </span>
         </div>
 
-        <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#0F172A] shadow-md text-slate-200">
-          {/* Editor Header Bar */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-[#1E293B] border-b border-slate-700/80 text-xs">
+        {/* DEBLUN OS Window Container */}
+        <div className="rounded-2xl overflow-hidden border border-slate-700/80 bg-[#0B0F19] shadow-xl text-slate-200 font-mono">
+          {/* Mac OS Window Header */}
+          <div className="flex items-center justify-between px-4 py-3 bg-[#111827] border-b border-slate-800 text-xs select-none">
+            {/* Left Traffic-Light Dots */}
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-              <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-              <span className="font-mono text-slate-400 ml-2 uppercase text-[10px] font-bold">
-                {content.codeExample.language} editor
+              <span className="w-3 h-3 rounded-full bg-[#ff5f57] border border-[#e0443e] inline-block shadow-2xs" />
+              <span className="w-3 h-3 rounded-full bg-[#febc2e] border border-[#d89e24] inline-block shadow-2xs" />
+              <span className="w-3 h-3 rounded-full bg-[#28c840] border border-[#1aab29] inline-block shadow-2xs" />
+              <span className="text-[11px] text-slate-400 font-mono ml-2 hidden sm:inline">
+                metamind-engine@v2.4.0: ~/db_schemas/query.sql
               </span>
             </div>
 
+            {/* Center / Right Controls */}
             <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                [SYS.READY]
+              </span>
+
               <button
                 onClick={handleCopyCode}
                 className="flex items-center gap-1 text-[11px] font-medium text-slate-300 hover:text-white px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
@@ -395,36 +432,73 @@ export const ChapterStudyView: React.FC<ChapterStudyViewProps> = ({
 
               <button
                 onClick={() => setShowCodeOutput(!showCodeOutput)}
-                className="flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 px-3 py-1 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1 rounded-lg transition-all shadow-xs cursor-pointer active:scale-95"
               >
                 <Play className="w-3 h-3 fill-white" />
-                <span>{showCodeOutput ? 'Reset Query' : 'Run SQL Query'}</span>
+                <span>{showCodeOutput ? 'Reset Sandbox' : 'Run SQL Query'}</span>
               </button>
             </div>
           </div>
 
-          {/* Code Text Area */}
-          <div className="p-4 font-mono text-xs sm:text-sm text-emerald-300 overflow-x-auto leading-relaxed bg-[#0F172A]">
-            <pre>{content.codeExample.code}</pre>
+          {/* Tab Navigation Bar */}
+          <div className="flex items-center border-b border-slate-800 bg-[#0d131f] px-3 pt-2 gap-1 text-xs select-none">
+            <div className="px-3.5 py-1.5 rounded-t-lg bg-[#0B0F19] text-indigo-400 font-bold border-t-2 border-indigo-500 text-[11px] flex items-center gap-2">
+              <span className="text-emerald-400 text-[10px]">●</span>
+              <span>query.sql</span>
+            </div>
+            <div className="px-3 py-1.5 text-slate-500 text-[11px] hover:text-slate-400 transition-colors cursor-pointer">
+              schema_def.sql
+            </div>
+            <div className="px-3 py-1.5 text-slate-500 text-[11px] hover:text-slate-400 transition-colors cursor-pointer">
+              telemetry.log
+            </div>
+          </div>
+
+          {/* Editor Body with Line Numbers */}
+          <div className="p-4 sm:p-5 flex gap-4 text-xs sm:text-sm leading-relaxed overflow-x-auto custom-scrollbar bg-[#0B0F19]">
+            {/* Line Numbers */}
+            <div className="select-none text-slate-600 text-right pr-3 border-r border-slate-800/80 font-mono space-y-0.5">
+              {content.codeExample.code.split('\n').map((_, lineIdx) => (
+                <div key={lineIdx} className="leading-relaxed">
+                  {lineIdx + 1}
+                </div>
+              ))}
+            </div>
+
+            {/* Code Content with Blinking Cursor */}
+            <pre className="font-mono text-emerald-300 leading-relaxed overflow-x-auto flex-1">
+              <code>{content.codeExample.code}</code>
+              <span className="cursor-blink inline-block w-2 h-4 bg-emerald-400 align-middle ml-1" />
+            </pre>
           </div>
 
           {/* Interactive Output Console */}
           {showCodeOutput && (
-            <div className="border-t border-slate-700/80 bg-[#020617] p-4 space-y-2 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-                <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Query Execution Result:</span>
+            <div className="border-t border-slate-800 bg-[#020617] p-4 sm:p-5 space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs font-mono text-slate-400 pb-1">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-bold text-slate-300">Execution Stream Output:</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
+                  Status: [200 OK] • Elapsed: 14ms • Memory: 1.2MB
+                </span>
               </div>
-              <pre className="font-mono text-xs text-slate-300 whitespace-pre overflow-x-auto p-3 rounded-xl bg-slate-900 border border-slate-800">
+              <pre className="font-mono text-xs text-slate-300 whitespace-pre overflow-x-auto p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 leading-normal">
                 {content.codeExample.outputPreview}
               </pre>
             </div>
           )}
 
-          {/* Explanatory Footer */}
-          <div className="p-3.5 bg-[#1E293B]/70 border-t border-slate-700/60 text-xs text-slate-400 font-sans">
-            <strong className="text-slate-200">Engine Note: </strong>
-            {content.codeExample.explanation}
+          {/* Explanatory Technical Footer */}
+          <div className="p-3.5 bg-[#111827] border-t border-slate-800 text-xs text-slate-400 font-sans flex items-center justify-between">
+            <div>
+              <strong className="text-slate-200">Engine Note: </strong>
+              {content.codeExample.explanation}
+            </div>
+            <span className="text-[10px] text-slate-500 font-mono hidden sm:inline shrink-0 pl-3">
+              UTF-8 • SQL(ANSI)
+            </span>
           </div>
         </div>
       </div>
@@ -648,16 +722,27 @@ export const ChapterStudyView: React.FC<ChapterStudyViewProps> = ({
             <div className="hidden sm:block" />
           )}
 
-          {/* Center: Take Exam Button */}
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleLaunchExam}
-            className="w-full sm:w-auto font-bold bg-white text-slate-900 hover:bg-slate-100 border-none cursor-pointer shadow-md"
-            leftIcon={<FileCheck className="w-4 h-4 text-indigo-600" />}
-          >
-            Take Chapter Exam
-          </Button>
+          {/* Center: Take Exam Button & Export Guide */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleLaunchExam}
+              className="w-full sm:w-auto font-bold bg-white text-slate-900 hover:bg-slate-100 border-none cursor-pointer shadow-md"
+              leftIcon={<FileCheck className="w-4 h-4 text-indigo-600" />}
+            >
+              Take Chapter Exam
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleExportStudyGuide}
+              className="w-full sm:w-auto font-bold text-indigo-200 hover:text-white bg-slate-800/90 hover:bg-slate-800 border-slate-700 cursor-pointer shadow-sm"
+              leftIcon={<FileDown className="w-4 h-4 text-indigo-400" />}
+            >
+              Export Guide PDF
+            </Button>
+          </div>
 
           {/* Next Chapter */}
           {content.nextChapterId ? (
