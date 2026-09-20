@@ -5,7 +5,7 @@ import { Terminal, Compass } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { NeuralTerminalModal } from '@/components/ui/NeuralTerminalModal';
 import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
-import { AvatarPlatformTourModal } from '@/components/ui/AvatarPlatformTourModal';
+import { AvatarContextualTour } from '@/components/ui/AvatarContextualTour';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 
@@ -141,8 +141,8 @@ export const AppLayout: React.FC = () => {
         onClose={() => setIsTerminalOpen(false)}
       />
 
-      {/* Platform Interactive Avatar Tour Modal */}
-      <AvatarPlatformTourModal
+      {/* Platform In-Situ Contextual Avatar Tour */}
+      <AvatarContextualTour
         isOpen={isTourOpen}
         onClose={() => setIsTourOpen(false)}
         avatarUrl={avatarUrl}

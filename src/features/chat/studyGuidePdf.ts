@@ -1399,8 +1399,8 @@ export const generateStudyGuidePdfHtml = (
 
 export const downloadStudyGuidePdf = (
   topic: string,
-  diagnostic: CognitiveDiagnostic,
-  userName: string,
+  diagnostic?: CognitiveDiagnostic,
+  userName: string = 'Scholar',
   chapterData?: ChapterContent
 ) => {
   const windowPrint = window.open('', '_blank');

@@ -132,6 +132,19 @@ export const Sidebar: React.FC = () => {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  id={
+                    item.path.includes('dashboard')
+                      ? 'tour-nav-dashboard'
+                      : item.path.includes('learning-map')
+                      ? 'tour-nav-learning-map'
+                      : item.path.includes('practice')
+                      ? 'tour-nav-practice'
+                      : item.path.includes('analysis')
+                      ? 'tour-nav-analysis'
+                      : item.path.includes('committee')
+                      ? 'tour-nav-committee'
+                      : undefined
+                  }
                   onClick={() => setIsOpen(false)}
                   className={({ isActive }) =>
                     cn(
@@ -171,6 +184,7 @@ export const Sidebar: React.FC = () => {
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <NavLink
               to="/app/profile"
+              id="tour-nav-profile"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 group flex-1 min-w-0 pr-2"
             >

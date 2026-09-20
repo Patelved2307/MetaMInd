@@ -19,7 +19,7 @@ import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { FilePreviewModal } from '@/components/chat/FilePreviewModal';
 import { PluginMarketplaceModal } from '@/components/chat/PluginMarketplaceModal';
 import { ShareChatModal } from '@/components/chat/ShareChatModal';
-import { AvatarPlatformTourModal } from '@/components/ui/AvatarPlatformTourModal';
+import { AvatarContextualTour } from '@/components/ui/AvatarContextualTour';
 import {
   Search,
   LayoutDashboard,
@@ -975,7 +975,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
         onRemove={(id) => handleRemoveAttachment(id)}
       />
 
-      <AvatarPlatformTourModal
+      <AvatarContextualTour
         isOpen={isTourOpen}
         onClose={() => setIsTourOpen(false)}
         avatarUrl={avatarUrl}
@@ -1227,6 +1227,24 @@ export const ChatbotWorkspacePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Quick Study Guide PDF Download button */}
+            <button
+              id="tour-pdf-btn"
+              type="button"
+              onClick={() => {
+                downloadStudyGuidePdf(
+                  activeSession?.title || 'Academic Quick Review',
+                  undefined,
+                  registeredName
+                );
+              }}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-colors cursor-pointer shadow-2xs"
+              title="Download 15-Page Study Guide PDF"
+            >
+              <FileDown className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Study Guide PDF</span>
+            </button>
+
             {/* Share Current Chat Button */}
             {activeSession && (
               <button
@@ -1252,6 +1270,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
             </button>
 
             <button
+              id="tour-dashboard-btn"
               type="button"
               onClick={() => navigate('/app/dashboard')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-colors cursor-pointer"
@@ -1299,7 +1318,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
               </div>
 
               {/* Center Interactive Prompt Box */}
-              <div className="welcome-prompt-box w-full bg-white border border-slate-200/90 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-3xl p-3.5 sm:p-4 shadow-xl shadow-slate-200/40 space-y-3 text-left transition-all">
+              <div id="tour-chat-prompt" className="welcome-prompt-box w-full bg-white border border-slate-200/90 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-3xl p-3.5 sm:p-4 shadow-xl shadow-slate-200/40 space-y-3 text-left transition-all">
                 {/* Attached File Chips */}
                 {renderAttachmentChips()}
 
