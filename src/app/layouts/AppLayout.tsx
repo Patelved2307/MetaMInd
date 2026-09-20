@@ -13,22 +13,21 @@ import { useTour } from '@/lib/tourStore';
 export const AppLayout: React.FC = () => {
   const { profile, user } = useAuth();
   const location = useLocation();
-  const { startTour } = useTour();
+  const { startTour, isAutoTourEnabled, hasSeenTour } = useTour();
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
 
-  // Auto-launch guide tour for new students on registration if never seen
+  // Auto-launch guide tour for new students on registration if never seen and enabled
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen');
-    if (!hasSeenTour) {
+    if (isAutoTourEnabled && !hasSeenTour) {
       const timer = setTimeout(() => {
         startTour(0);
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [startTour]);
+  }, [startTour, isAutoTourEnabled, hasSeenTour]);
 
   const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
   const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);

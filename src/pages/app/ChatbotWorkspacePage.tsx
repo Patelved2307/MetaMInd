@@ -295,18 +295,17 @@ export const ChatbotWorkspacePage: React.FC = () => {
   const [isPluginStoreOpen, setIsPluginStoreOpen] = useState(false);
   const [sharingSession, setSharingSession] = useState<ChatSession | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const { startTour } = useTour();
+  const { startTour, isAutoTourEnabled, hasSeenTour } = useTour();
 
-  // Auto-launch avatar guide tutorial for new students on registration
+  // Auto-launch avatar guide tutorial for new students on registration if enabled
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen');
-    if (!hasSeenTour) {
+    if (isAutoTourEnabled && !hasSeenTour) {
       const timer = setTimeout(() => {
         startTour(1);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [startTour]);
+  }, [startTour, isAutoTourEnabled, hasSeenTour]);
   const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null);
 
   // History 3-dots Menu & Inline Rename State

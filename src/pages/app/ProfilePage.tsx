@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,14 +19,21 @@ import {
   CheckCircle2,
   Save,
   X,
+  Compass,
+  Play,
+  RotateCcw,
 } from 'lucide-react';
 
 import { AvatarSelectorModal } from '@/components/ui/AvatarSelectorModal';
 import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { generateAvatarUrl, getAvatarPresetByUrl, sanitizeAvatarUrl, SIGNATURE_AVATARS } from '@/lib/avatarGenerator';
+import { useTour } from '@/lib/tourStore';
 
 export const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, profile, updateProfile } = useAuth();
+  const { isAutoTourEnabled, hasSeenTour, setAutoTourEnabled, resetTourSeen, startTour } = useTour();
+  const [tourResetToast, setTourResetToast] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -375,6 +383,125 @@ export const ProfilePage: React.FC = () => {
             </div>
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-500">
               Authentication: Supabase Auth • Active Session Encrypted
+            </div>
+          </div>
+        </div>
+
+        {/* INTERACTIVE GUIDE TOUR & DEMO SETTINGS */}
+        <div className="md:col-span-2 rounded-3xl p-6 bg-white border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs"
+                style={{ backgroundColor: theme.primary }}
+              >
+                <Compass className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Interactive Guide Tour & Demo Controls</h2>
+                <p className="text-xs text-slate-500">
+                  Enable or disable automatic tutorial walkthroughs, or trigger it anytime across any user account for presentations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border ${
+                isAutoTourEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}>
+                {isAutoTourEnabled ? '● Auto-Tour Active' : '○ Auto-Tour Off'}
+              </span>
+            </div>
+          </div>
+
+          {tourResetToast && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between">
+              <span>{tourResetToast}</span>
+              <button
+                type="button"
+                onClick={() => setTourResetToast(null)}
+                className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* 1. Direct On/Off Toggle */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">Auto-Launch on Login</span>
+                <span className="text-[11px] text-slate-500">
+                  {isAutoTourEnabled
+                    ? 'Tour automatically opens for students on sign in'
+                    : 'Tour is disabled and will not pop up automatically'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const newState = !isAutoTourEnabled;
+                  setAutoTourEnabled(newState);
+                  setTourResetToast(
+                    newState
+                      ? 'Auto-tour enabled! The tutorial will display on initial login.'
+                      : 'Auto-tour disabled! The tutorial will not pop up automatically.'
+                  );
+                  setTimeout(() => setTourResetToast(null), 3000);
+                }}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isAutoTourEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                }`}
+                style={isAutoTourEnabled ? { backgroundColor: theme.primary } : undefined}
+                role="switch"
+                aria-checked={isAutoTourEnabled}
+                title={isAutoTourEnabled ? 'Click to disable auto-tour' : 'Click to enable auto-tour'}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isAutoTourEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* 2. Demo Buttons: Launch Now & Reset */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">Demo Quick Actions</span>
+                <span className="text-[11px] text-slate-500">
+                  {hasSeenTour ? 'Status: Completed on this account' : 'Status: Fresh / Unseen account'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetTourSeen();
+                    startTour(0, navigate);
+                  }}
+                  className="px-3 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  style={{ backgroundColor: theme.primary }}
+                  title="Immediately launch the guide tour starting from Dashboard"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Start Tour</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetTourSeen();
+                    setTourResetToast('Tour status has been reset! It will treat this user as a brand-new student.');
+                    setTimeout(() => setTourResetToast(null), 3500);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                  title="Reset tour seen state for demo testing"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

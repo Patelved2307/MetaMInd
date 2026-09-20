@@ -274,7 +274,7 @@ export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
               {/* Close Button */}
               <button
                 type="button"
-                onClick={closeTour}
+                onClick={() => closeTour()}
                 className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-xl transition-colors cursor-pointer shrink-0"
                 title="Skip tour"
               >
@@ -289,13 +289,24 @@ export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
 
             {/* Footer Navigation Bar */}
             <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={closeTour}
-                className="text-xs font-medium text-slate-400 hover:text-slate-700 hover:underline cursor-pointer transition-colors"
-              >
-                Skip tour
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => closeTour(false)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-700 hover:underline cursor-pointer transition-colors"
+                >
+                  Skip
+                </button>
+                <span className="text-slate-300 text-[10px]">•</span>
+                <button
+                  type="button"
+                  onClick={() => closeTour(true)}
+                  className="text-[11px] font-medium text-slate-400 hover:text-rose-600 cursor-pointer transition-colors"
+                  title="Turn off automatic tour for this browser"
+                >
+                  Turn off
+                </button>
+              </div>
 
               {/* Progress indicator dots */}
               <div className="flex items-center gap-1">

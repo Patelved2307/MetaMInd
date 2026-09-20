@@ -98,10 +98,19 @@ type TourListener = () => void;
 class TourStore {
   private isOpen: boolean = false;
   private currentStepIndex: number = 0;
+  private isAutoTourEnabled: boolean = true;
   private listeners: Set<TourListener> = new Set();
 
   constructor() {
-    // Check if user was in the middle of a tour (e.g. across page refresh or navigation)
+    // Check if auto tour is explicitly disabled by user in settings
+    const savedAutoTour = localStorage.getItem('metamind_auto_tour_enabled');
+    if (savedAutoTour !== null) {
+      this.isAutoTourEnabled = savedAutoTour === 'true';
+    } else {
+      this.isAutoTourEnabled = true;
+    }
+
+    // Check if user was in the middle of a tour across page refresh or navigation
     const savedOpen = sessionStorage.getItem('metamind_tour_active');
     const savedStep = sessionStorage.getItem('metamind_tour_step');
     if (savedOpen === 'true' && savedStep !== null) {
@@ -127,12 +136,28 @@ class TourStore {
   }
 
   public getState() {
+    const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen') === 'true';
     return {
       isOpen: this.isOpen,
       currentStepIndex: this.currentStepIndex,
       currentStep: TOUR_STEPS[this.currentStepIndex] || TOUR_STEPS[0],
       totalSteps: TOUR_STEPS.length,
+      isAutoTourEnabled: this.isAutoTourEnabled,
+      hasSeenTour,
     };
+  }
+
+  public setAutoTourEnabled(enabled: boolean) {
+    this.isAutoTourEnabled = enabled;
+    localStorage.setItem('metamind_auto_tour_enabled', enabled ? 'true' : 'false');
+    this.notify();
+  }
+
+  public resetTourSeen() {
+    localStorage.removeItem('metamind_platform_tour_seen');
+    this.isAutoTourEnabled = true;
+    localStorage.setItem('metamind_auto_tour_enabled', 'true');
+    this.notify();
   }
 
   public startTour(stepIndex: number = 0, navigateFn?: (route: string) => void) {
@@ -182,9 +207,13 @@ class TourStore {
     }
   }
 
-  public closeTour() {
+  public closeTour(dontShowAgain: boolean = false) {
     this.isOpen = false;
     localStorage.setItem('metamind_platform_tour_seen', 'true');
+    if (dontShowAgain) {
+      this.isAutoTourEnabled = false;
+      localStorage.setItem('metamind_auto_tour_enabled', 'false');
+    }
     this.notify();
   }
 }
@@ -202,12 +231,14 @@ export function useTour() {
 
   return {
     ...state,
+    setAutoTourEnabled: (enabled: boolean) => tourStore.setAutoTourEnabled(enabled),
+    resetTourSeen: () => tourStore.resetTourSeen(),
     startTour: (stepIndex?: number, navigateFn?: (route: string) => void) =>
       tourStore.startTour(stepIndex, navigateFn),
     nextStep: (navigateFn?: (route: string) => void) => tourStore.nextStep(navigateFn),
     prevStep: (navigateFn?: (route: string) => void) => tourStore.prevStep(navigateFn),
     goToStep: (stepIndex: number, navigateFn?: (route: string) => void) =>
       tourStore.goToStep(stepIndex, navigateFn),
-    closeTour: () => tourStore.closeTour(),
+    closeTour: (dontShowAgain?: boolean) => tourStore.closeTour(dontShowAgain),
   };
 }
