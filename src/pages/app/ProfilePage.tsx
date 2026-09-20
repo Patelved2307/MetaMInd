@@ -139,7 +139,11 @@ export const ProfilePage: React.FC = () => {
       <div id="tour-profile-hero" className="rounded-3xl p-6 sm:p-8 bg-white border border-slate-200/90 shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="relative group cursor-pointer" onClick={() => setIsAvatarModalOpen(true)}>
+            <div
+              id="tour-profile-avatar"
+              className="relative group cursor-pointer"
+              onClick={() => setIsAvatarModalOpen(true)}
+            >
               <GSAPAvatar
                 avatarId={avatarUrl}
                 size="lg"

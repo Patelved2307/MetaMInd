@@ -5,9 +5,12 @@ import { getAvatarPresetByUrl, type AvatarPreset } from '@/lib/avatarGenerator';
 export interface GSAPAvatarProps {
   avatarId?: string;
   seed?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | number;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full' | number;
+  shape?: 'circle' | 'rectangle';
+  transparentBg?: boolean;
   interactive?: boolean;
   showAura?: boolean;
+  isSpeaking?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -25,8 +28,11 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
   avatarId,
   seed,
   size = 'md',
+  shape = 'circle',
+  transparentBg = false,
   interactive = true,
   showAura = true,
+  isSpeaking = false,
   className = '',
   onClick,
 }) => {
@@ -35,9 +41,11 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
   const eyesRef = useRef<SVGGElement>(null);
   const pupilsRef = useRef<SVGGElement>(null);
   const eyelidsRef = useRef<SVGGElement>(null);
+  const mouthRef = useRef<SVGGElement>(null);
   const auraRef = useRef<SVGCircleElement>(null);
   const accessoriesRef = useRef<SVGGElement>(null);
 
+  const isFullSize = size === 'full';
   const dimension = typeof size === 'number' ? size : SIZE_MAP[size] || 48;
   const preset: AvatarPreset = getAvatarPresetByUrl(avatarId || seed);
   const theme = preset.theme;
@@ -110,6 +118,70 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
     return () => ctx.revert();
   }, [preset.id]);
 
+  // Dynamic Realistic Speech Cadence & Head Gestures when isSpeaking is active
+  useEffect(() => {
+    if (!isSpeaking) {
+      if (mouthRef.current) {
+        gsap.to(mouthRef.current, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
+      }
+      return;
+    }
+
+    const speechCtx = gsap.context(() => {
+      // Natural mouth talking movement (syllables expansion & contraction)
+      if (mouthRef.current) {
+        const speechTl = gsap.timeline({ repeat: -1, yoyo: true });
+        speechTl
+          .to(mouthRef.current, {
+            scaleY: 2.3,
+            scaleX: 1.15,
+            transformOrigin: '50% 60%',
+            duration: 0.14,
+            ease: 'sine.inOut',
+          })
+          .to(mouthRef.current, {
+            scaleY: 0.7,
+            scaleX: 0.9,
+            transformOrigin: '50% 60%',
+            duration: 0.11,
+            ease: 'power1.in',
+          })
+          .to(mouthRef.current, {
+            scaleY: 1.9,
+            scaleX: 1.08,
+            transformOrigin: '50% 60%',
+            duration: 0.16,
+            ease: 'sine.out',
+          });
+      }
+
+      // Conversational subtle head nods while explaining
+      if (headRef.current) {
+        gsap.to(headRef.current, {
+          y: -1.8,
+          rotation: 1.4,
+          transformOrigin: '50% 80%',
+          duration: 0.38,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
+    }, containerRef);
+
+    return () => {
+      speechCtx.revert();
+      if (mouthRef.current) {
+        gsap.set(mouthRef.current, { scaleY: 1, scaleX: 1 });
+      }
+    };
+  }, [isSpeaking]);
+
   // Interactive Mouse Gaze Movement
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!interactive || !containerRef.current || !pupilsRef.current) return;
@@ -179,12 +251,18 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-full select-none overflow-visible ${
-        interactive ? 'cursor-pointer hover:shadow-lg transition-shadow duration-300' : ''
+      className={`relative inline-flex items-center justify-center shrink-0 select-none ${
+        transparentBg
+          ? 'overflow-visible'
+          : shape === 'rectangle'
+          ? 'rounded-2xl overflow-hidden'
+          : 'rounded-full overflow-hidden'
+      } ${
+        interactive ? 'cursor-pointer hover:scale-105 transition-transform duration-300' : ''
       } ${className}`}
       style={{
-        width: dimension,
-        height: dimension,
+        width: isFullSize ? '100%' : dimension,
+        height: isFullSize ? '100%' : dimension,
       }}
       title={`${preset.name} (${preset.theme.themeName})`}
     >
@@ -240,14 +318,18 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
             <stop offset="100%" stopColor={theme.secondary} stopOpacity="0.35" />
           </linearGradient>
 
-          {/* Clip paths for circular frame and eyelids */}
-          <clipPath id={`${uid}_circle_clip`}>
-            <circle cx="50" cy="50" r="47" />
+          {/* Clip paths for circular or rectangular frame and eyelids */}
+          <clipPath id={`${uid}_frame_clip`}>
+            {shape === 'rectangle' ? (
+              <rect x="0" y="0" width="100" height="100" rx="14" />
+            ) : (
+              <circle cx="50" cy="50" r="47" />
+            )}
           </clipPath>
         </defs>
 
         {/* 1. Pulsing Synaptic Aura (Outside circle) */}
-        {showAura && (
+        {!transparentBg && showAura && shape === 'circle' && (
           <circle
             ref={auraRef}
             cx="50"
@@ -258,27 +340,47 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
           />
         )}
 
-        {/* 2. Main Framed Avatar Container */}
-        <g clipPath={`url(#${uid}_circle_clip)`}>
-          {/* Circular Backdrop Plate */}
-          <circle cx="50" cy="50" r="47" fill={`url(#${uid}_bg)`} />
+        {/* 2. Main Avatar Body - Either Framed or Free-Standing Transparent Cutout */}
+        <g clipPath={transparentBg ? undefined : `url(#${uid}_frame_clip)`}>
+          {/* Backdrop Plate (Only if not transparent) */}
+          {!transparentBg && (
+            <>
+              {shape === 'rectangle' ? (
+                <rect x="0" y="0" width="100" height="100" rx="14" fill={`url(#${uid}_bg)`} />
+              ) : (
+                <circle cx="50" cy="50" r="47" fill={`url(#${uid}_bg)`} />
+              )}
 
-          {/* Cybernetic Grid Line Highlights */}
-          <path
-            d="M20 90 L50 40 L80 90 M10 50 Q50 20 90 50"
-            stroke="white"
-            strokeOpacity="0.12"
-            strokeWidth="1.5"
-            fill="none"
-          />
+              {/* Cybernetic Grid Line Highlights */}
+              <path
+                d="M20 90 L50 40 L80 90 M10 50 Q50 20 90 50"
+                stroke="white"
+                strokeOpacity="0.12"
+                strokeWidth="1.5"
+                fill="none"
+              />
+            </>
+          )}
 
           {/* 3. Shoulders / Clothing Base */}
           <g>
             {/* Base Torso */}
-            <path
-              d="M18 100 C18 78 32 72 50 72 C68 72 82 78 82 100 Z"
-              fill={`url(#${uid}_clothes)`}
-            />
+            {transparentBg ? (
+              <path
+                d="M10 100 C14 75 30 68 50 68 C70 68 86 75 90 100 Z"
+                fill={`url(#${uid}_clothes)`}
+              />
+            ) : shape === 'rectangle' ? (
+              <path
+                d="M0 100 L0 75 C15 70 32 68 50 68 C68 68 85 70 100 75 L100 100 Z"
+                fill={`url(#${uid}_clothes)`}
+              />
+            ) : (
+              <path
+                d="M18 100 C18 78 32 72 50 72 C68 72 82 78 82 100 Z"
+                fill={`url(#${uid}_clothes)`}
+              />
+            )}
 
             {/* Collar & Jacket Details */}
             <path
@@ -385,8 +487,8 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
               </g>
             )}
 
-            {/* Mouth / Smile */}
-            <g>
+            {/* Mouth / Smile with dynamic speech scaling */}
+            <g ref={mouthRef}>
               {style.archetype === 'skeleton' ? (
                 <path
                   d="M42 73 L42 75 M46 73 L46 75 M50 73 L50 75 M54 73 L54 75 M58 73 L58 75"
@@ -635,25 +737,42 @@ export const GSAPAvatar: React.FC<GSAPAvatarProps> = ({
           </g>
         </g>
 
-        {/* 8. Outer Sleek Glass Border Rim */}
-        <circle
-          cx="50"
-          cy="50"
-          r="47"
-          fill="none"
-          stroke={theme.primary}
-          strokeWidth="2"
-          strokeOpacity="0.8"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="48.5"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="1"
-          strokeOpacity="0.4"
-        />
+        {/* 8. Outer Sleek Glass Border Rim (Disabled on transparentBg) */}
+        {!transparentBg && shape === 'circle' && (
+          <>
+            <circle
+              cx="50"
+              cy="50"
+              r="47"
+              fill="none"
+              stroke={theme.primary}
+              strokeWidth="2"
+              strokeOpacity="0.8"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="48.5"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="1"
+              strokeOpacity="0.4"
+            />
+          </>
+        )}
+        {!transparentBg && shape === 'rectangle' && (
+          <rect
+            x="0"
+            y="0"
+            width="100"
+            height="100"
+            rx="14"
+            fill="none"
+            stroke={theme.primary}
+            strokeWidth="2"
+            strokeOpacity="0.8"
+          />
+        )}
       </svg>
     </div>
   );

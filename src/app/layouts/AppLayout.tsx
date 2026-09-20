@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
-import { Terminal, Compass } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { NeuralTerminalModal } from '@/components/ui/NeuralTerminalModal';
-import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { AvatarContextualTour } from '@/components/ui/AvatarContextualTour';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
@@ -119,32 +118,20 @@ export const AppLayout: React.FC = () => {
       </main>
 
       {/* Floating DEBLUN OS Style Terminal Launcher Button */}
-      {/* Floating DEBLUN OS Style Terminal & Tour Guide Launchers */}
-      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => startTour(0)}
-          className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 shadow-xl flex items-center gap-2 font-sans text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 group select-none"
-          title="Interactive Platform Guide"
-        >
-          <GSAPAvatar avatarId={avatarUrl} size={18} interactive={false} />
-          <span className="font-bold text-[11px] text-slate-700 group-hover:text-indigo-600">Guide Tour</span>
-          <Compass className="w-3.5 h-3.5 text-indigo-600 group-hover:rotate-45 transition-transform" />
-        </button>
-
-        {!isTerminalOpen && (
+      {!isTerminalOpen && (
+        <div className="fixed bottom-5 right-40 sm:right-44 z-40 flex items-center select-none">
           <button
             type="button"
             onClick={() => setIsTerminalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#0B0F19] hover:bg-[#111827] text-slate-200 border border-slate-700/80 shadow-xl flex items-center gap-2 font-mono text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 group select-none"
+            className="px-3 py-1.5 rounded-full bg-[#0B0F19] hover:bg-[#111827] text-slate-200 border border-slate-700/80 shadow-xl flex items-center gap-1.5 font-mono text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 group select-none"
             title="Open MetaMind CLI Terminal"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <Terminal className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-6 transition-transform" />
-            <span className="font-bold text-[11px] text-slate-300 group-hover:text-white">CLI Terminal</span>
+            <span className="font-bold text-[10.5px] text-slate-300 group-hover:text-white">Terminal</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Interactive Floating Neural Terminal Window */}
       <NeuralTerminalModal

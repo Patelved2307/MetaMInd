@@ -996,6 +996,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
       {/* LEFT SIDEBAR WITH HISTORY, SEARCH, AND PLUGINS STORE */}
       {/* ========================================================= */}
       <aside
+        id="tour-chat-sidebar"
         className={`${
           isLeftSidebarOpen ? 'w-64' : 'w-0'
         } transition-all duration-300 ease-in-out bg-white border-r border-slate-200/80 flex flex-col h-full overflow-hidden shrink-0 select-none z-30`}
@@ -1303,6 +1304,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     {/* Attachment trigger button */}
                     <button
+                      id="tour-chat-attach"
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
@@ -1314,6 +1316,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
                     {/* Plugin Store quick shortcut */}
                     <button
+                      id="tour-chat-plugins"
                       type="button"
                       onClick={() => setIsPluginStoreOpen(true)}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
@@ -1374,7 +1377,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
                   <span className="text-xs text-indigo-600 font-medium">Click to run immediately</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div id="tour-chat-starter-cards" className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {starterCards.map((card, idx) => (
                     <button
                       key={idx}

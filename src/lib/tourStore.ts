@@ -11,34 +11,87 @@ export interface TourStepConfig {
 }
 
 export const TOUR_STEPS: TourStepConfig[] = [
+  // 1. LEARN PAGE COMPONENT-BY-COMPONENT WALKTHROUGH
+  {
+    id: 'learn-prompt',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-chat-prompt',
+    title: 'Neural Prompt Composer',
+    badge: 'Learn • Component 01',
+    speechText:
+      'Ask any academic question, paste messy code, or drop lecture notes here. I will break down the concept step-by-step with analogies and interactive drills!',
+    preferredPosition: 'bottom',
+  },
+  {
+    id: 'learn-attach',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-chat-attach',
+    title: 'Multi-Modal Attachments',
+    badge: 'Learn • Component 02',
+    speechText:
+      'Drop lecture PDFs, assignment screenshots, or source code files right here. I will parse equations, debug errors, and summarize key takeaways.',
+    preferredPosition: 'bottom',
+  },
+  {
+    id: 'learn-plugins',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-chat-plugins',
+    title: 'Cognitive AI Modes & Plugins',
+    badge: 'Learn • Component 03',
+    speechText:
+      'Toggle specialized tutor engines: Socratic Guided Probing, Code Bug Diagnoser, or Comprehensive Exam Revision!',
+    preferredPosition: 'bottom',
+  },
+  {
+    id: 'learn-starter-cards',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-chat-starter-cards',
+    title: 'Diagnostic Workflows',
+    badge: 'Learn • Component 04',
+    speechText:
+      'One-tap diagnostic drills! Test your comprehension in SQL JOINs, Binary Search Trees, and Computer Networking algorithms.',
+    preferredPosition: 'top',
+  },
+  {
+    id: 'learn-sidebar',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-chat-sidebar',
+    title: 'Study Projects & History',
+    badge: 'Learn • Component 05',
+    speechText:
+      'All your past doubt breakdowns and explanations are safely stored here. Group conversations into custom project notebooks anytime.',
+    preferredPosition: 'right',
+  },
+  {
+    id: 'learn-dashboard-btn',
+    pageRoute: '/app/chat',
+    targetSelector: '#tour-dashboard-btn',
+    title: 'Student Command Dashboard',
+    badge: 'Learn • Component 06',
+    speechText:
+      'Ready to see your analytics? Jump right into your Command Dashboard to track daily streaks, XP rank, and learning roadmaps!',
+    preferredPosition: 'bottom',
+  },
+
+  // 2. CORE PLATFORM HUBS
   {
     id: 'dashboard',
     pageRoute: '/app/dashboard',
     targetSelector: '#tour-dashboard-streak',
-    title: 'Your Learning Dashboard',
-    badge: 'Step 1 of 8 • Dashboard',
+    title: 'Daily Study Streaks & XP',
+    badge: 'Dashboard Hub',
     speechText:
-      'Welcome to your main command center! Track your daily study streak, view active goals, and monitor progress across all your enrolled subjects.',
+      'Build consistent learning habits! Keep your study streak burning to unlock bonus XP multipliers and prestigious achievement medals.',
     preferredPosition: 'bottom',
-  },
-  {
-    id: 'learn-chat',
-    pageRoute: '/app/chat',
-    targetSelector: '#tour-chat-prompt',
-    title: 'AI Concept Tutor',
-    badge: 'Step 2 of 8 • Learn',
-    speechText:
-      'Ask any academic question or paste lecture notes here. Your AI companion explains concepts step-by-step with analogies and code snippets.',
-    preferredPosition: 'top',
   },
   {
     id: 'practice',
     pageRoute: '/app/practice',
     targetSelector: '#tour-practice-hero',
     title: 'Interactive Practice Drills',
-    badge: 'Step 3 of 8 • Practice',
+    badge: 'Practice Hub',
     speechText:
-      'Reinforce your learning with active recall drills, quiz question banks, and coding challenges calibrated to your pace.',
+      'Reinforce your memory with active recall quiz banks and coding exercises calibrated to your cognitive skill level.',
     preferredPosition: 'bottom',
   },
   {
@@ -46,9 +99,9 @@ export const TOUR_STEPS: TourStepConfig[] = [
     pageRoute: '/app/learning-map',
     targetSelector: '#tour-learning-map-hero',
     title: 'Visual Learning Roadmap',
-    badge: 'Step 4 of 8 • Progress',
+    badge: 'Roadmap Hub',
     speechText:
-      'Explore your visual curriculum roadmap! Easily check prerequisite branches to see which topics are mastered and what to learn next.',
+      'Explore your prerequisite curriculum graph to see which topics are mastered and what branch to conquer next.',
     preferredPosition: 'bottom',
   },
   {
@@ -56,9 +109,9 @@ export const TOUR_STEPS: TourStepConfig[] = [
     pageRoute: '/app/achievements',
     targetSelector: '#tour-achievements-hero',
     title: 'Badges & Rank Medals',
-    badge: 'Step 5 of 8 • Badges',
+    badge: 'Achievements Hub',
     speechText:
-      'Earn XP and collect high-status 3D medals as you maintain study streaks, solve concept puzzles, and score high on tests.',
+      'Earn verifiable XP and collect high-tier 3D medals as you solve tricky puzzles and ace test simulations.',
     preferredPosition: 'bottom',
   },
   {
@@ -66,9 +119,9 @@ export const TOUR_STEPS: TourStepConfig[] = [
     pageRoute: '/app/committee',
     targetSelector: '#tour-committee-hero',
     title: 'Student Community & Doubts',
-    badge: 'Step 6 of 8 • Committee',
+    badge: 'Committee Hub',
     speechText:
-      'Post tricky homework doubts with XP bounties, help answer peer questions, and join live collaborative study rooms.',
+      'Post tricky homework doubts with XP bounties, help peers with solutions, and join live study rooms.',
     preferredPosition: 'bottom',
   },
   {
@@ -76,19 +129,19 @@ export const TOUR_STEPS: TourStepConfig[] = [
     pageRoute: '/app/exam',
     targetSelector: '#tour-exam-hero',
     title: 'Timed Exam Simulator',
-    badge: 'Step 7 of 8 • Exams',
+    badge: 'Exam Hub',
     speechText:
-      'Test your readiness under real exam time limits to build speed and accuracy, and earn verifiable course certificates.',
+      'Simulate high-stakes exam conditions with strict time limits to build test speed and earn accredited course certificates.',
     preferredPosition: 'bottom',
   },
   {
     id: 'profile',
     pageRoute: '/app/profile',
-    targetSelector: '#tour-profile-hero',
-    title: 'Your Avatar & Theme Engine',
-    badge: 'Step 8 of 8 • Profile',
+    targetSelector: '#tour-profile-avatar',
+    title: 'Your Companion & Themes',
+    badge: 'Profile Hub',
     speechText:
-      'This is your animated vector companion! You can customize your avatar anytime, and your entire platform theme will update to match.',
+      'That’s me! You can customize my vector persona and color scheme anytime, and your entire platform theme updates instantly.',
     preferredPosition: 'bottom',
   },
 ];
@@ -216,6 +269,12 @@ class TourStore {
     }
     this.notify();
   }
+
+  public startPageTour(route?: string, navigateFn?: (route: string) => void) {
+    const currentPath = route || (typeof window !== 'undefined' ? window.location.pathname : '/app/chat');
+    const matchingIndex = TOUR_STEPS.findIndex((s) => s.pageRoute === currentPath);
+    this.startTour(matchingIndex >= 0 ? matchingIndex : 0, navigateFn);
+  }
 }
 
 export const tourStore = new TourStore();
@@ -235,6 +294,8 @@ export function useTour() {
     resetTourSeen: () => tourStore.resetTourSeen(),
     startTour: (stepIndex?: number, navigateFn?: (route: string) => void) =>
       tourStore.startTour(stepIndex, navigateFn),
+    startPageTour: (route?: string, navigateFn?: (route: string) => void) =>
+      tourStore.startPageTour(route, navigateFn),
     nextStep: (navigateFn?: (route: string) => void) => tourStore.nextStep(navigateFn),
     prevStep: (navigateFn?: (route: string) => void) => tourStore.prevStep(navigateFn),
     goToStep: (stepIndex: number, navigateFn?: (route: string) => void) =>
