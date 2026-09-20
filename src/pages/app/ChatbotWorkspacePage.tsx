@@ -24,7 +24,6 @@ import { useTour } from '@/lib/tourStore';
 import {
   Search,
   LayoutDashboard,
-  Compass,
   Trash2,
   PanelLeftClose,
   PanelLeft,
@@ -1225,24 +1224,6 @@ export const ChatbotWorkspacePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Study Guide PDF Download button */}
-            <button
-              id="tour-pdf-btn"
-              type="button"
-              onClick={() => {
-                downloadStudyGuidePdf(
-                  activeSession?.title || 'Academic Quick Review',
-                  undefined,
-                  registeredName
-                );
-              }}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-colors cursor-pointer shadow-2xs"
-              title="Download 15-Page Study Guide PDF"
-            >
-              <FileDown className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Study Guide PDF</span>
-            </button>
-
             {/* Share Current Chat Button */}
             {activeSession && (
               <button
@@ -1255,17 +1236,6 @@ export const ChatbotWorkspacePage: React.FC = () => {
                 <span className="hidden sm:inline">Share</span>
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={() => startTour(1)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200/90 rounded-xl transition-all cursor-pointer shadow-2xs group"
-              title="Platform Interactive Guide"
-            >
-              <GSAPAvatar avatarId={avatarUrl} size={18} interactive={false} />
-              <span className="hidden sm:inline">Guide Tour</span>
-              <Compass className="w-3.5 h-3.5 text-indigo-600 group-hover:rotate-45 transition-transform" />
-            </button>
 
             <button
               id="tour-dashboard-btn"
