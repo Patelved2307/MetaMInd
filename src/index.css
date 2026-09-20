@@ -185,3 +185,67 @@ input[type="radio"] {
 .clip-hexagon {
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
+
+/* ========================================================= */
+/* PREMIUM GSAP & TYPOGRAPHY ENHANCEMENT SUITE               */
+/* ========================================================= */
+
+@keyframes textShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.text-shimmer-gradient {
+  background: linear-gradient(
+    90deg,
+    #0f172a 0%,
+    #3b82f6 25%,
+    #6366f1 50%,
+    #8b5cf6 75%,
+    #0f172a 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textShimmer 6s ease infinite;
+}
+
+.text-aurora-gradient {
+  background: linear-gradient(135deg, #1d4ed8 0%, #6366f1 50%, #9333ea 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 24px rgba(99, 102, 241, 0.25);
+}
+
+@keyframes badgePulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+}
+
+.badge-glow-pulse {
+  animation: badgePulseGlow 2.5s infinite;
+}
+
+.card-interactive-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-interactive-lift:hover {
+  transform: translateY(-3px) scale(1.004);
+  box-shadow: 0 16px 32px -12px rgba(15, 23, 42, 0.08);
+}

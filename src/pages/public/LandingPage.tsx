@@ -1,14 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Globe } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { AboutSection } from '@/components/landing/AboutSection';
 import { FeaturedVideoSection } from '@/components/landing/FeaturedVideoSection';
 import { PhilosophySection } from '@/components/landing/PhilosophySection';
 import { ServicesSection } from '@/components/landing/ServicesSection';
 import { Footer } from '@/components/landing/Footer';
 
+gsap.registerPlugin(ScrollTrigger);
+
 export const LandingPage: React.FC = () => {
+  const heroRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const heroContentRef = useRef<HTMLDivElement>(null);
   const [doubtInput, setDoubtInput] = useState('');
 
   // Vanilla JS Video fade logic via refs & requestAnimationFrame
@@ -82,6 +88,46 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
+  // GSAP ScrollTrigger Parallax Scrub for Hero
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const ctx = gsap.context(() => {
+      // Parallax zoom and downward drift on background video
+      if (videoRef.current) {
+        gsap.to(videoRef.current, {
+          yPercent: 18,
+          scale: 1.12,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      }
+
+      // Parallax upward lift and fade on hero headline & input
+      if (heroContentRef.current) {
+        gsap.to(heroContentRef.current, {
+          yPercent: -24,
+          opacity: 0.1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      }
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
   const handleStartDoubt = (e: React.FormEvent) => {
     e.preventDefault();
     // Redirects to sign-up / onboarding with initial doubt context
@@ -91,7 +137,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="bg-black text-white min-h-screen selection:bg-white/20 selection:text-white">
       {/* SECTION 1 -- HERO */}
-      <section className="min-h-screen overflow-hidden relative flex flex-col justify-between">
+      <section ref={heroRef} className="min-h-screen overflow-hidden relative flex flex-col justify-between">
         {/* Background Video with Vanilla JS Fade Logic */}
         <video
           ref={videoRef}
@@ -100,7 +146,7 @@ export const LandingPage: React.FC = () => {
           autoPlay
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover object-bottom pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover object-bottom pointer-events-none will-change-transform"
         />
 
         {/* Video Overlay Gradient for Crisp Unobstructed View */}
@@ -143,7 +189,7 @@ export const LandingPage: React.FC = () => {
         </header>
 
         {/* Hero Main Content (Unobstructed BG Hero Visibility) */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8 text-center space-y-6 max-w-4xl mx-auto">
+        <div ref={heroContentRef} className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8 text-center space-y-6 max-w-4xl mx-auto will-change-transform">
           {/* Main Heading */}
           <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-white tracking-tight whitespace-nowrap font-serif drop-shadow-lg">
             Know it then <em className="italic">all</em>.
@@ -170,8 +216,8 @@ export const LandingPage: React.FC = () => {
           </form>
 
           {/* Subtitle */}
-          <p className="text-white/90 text-xs sm:text-sm leading-relaxed max-w-lg px-4 drop-shadow-sm font-sans">
-            Don't just get an answer. Understand what you need to learn next. MetaMind transforms questions into adaptive concept maps and gap analysis.
+          <p className="text-white/70 text-xs sm:text-sm leading-relaxed max-w-md px-4 font-sans font-normal tracking-wide">
+            Transform any doubt into lifelong understanding through adaptive concept mapping.
           </p>
         </div>
 

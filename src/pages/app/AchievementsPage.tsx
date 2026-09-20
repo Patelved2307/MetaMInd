@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl } from '@/lib/avatarGenerator';
 import { Button } from '@/components/ui/Button';
@@ -40,12 +41,63 @@ const Hexagonal3DBadge: React.FC<{
 }> = ({ badge, size = 'sm' }) => {
   const Icon = badge.icon;
   const isLarge = size === 'lg';
+  const cardRef = useRef<HTMLDivElement>(null);
+  const sheenRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -16;
+    const rotateY = ((x - centerX) / centerX) * 16;
+
+    gsap.to(cardRef.current, {
+      rotateX,
+      rotateY,
+      transformPerspective: 600,
+      ease: 'power1.out',
+      duration: 0.2,
+    });
+
+    if (sheenRef.current) {
+      const sheenX = (x / rect.width) * 100;
+      const sheenY = (y / rect.height) * 100;
+      gsap.to(sheenRef.current, {
+        opacity: 0.65,
+        background: `radial-gradient(circle at ${sheenX}% ${sheenY}%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 65%)`,
+        duration: 0.15,
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      rotateX: 0,
+      rotateY: 0,
+      ease: 'power2.out',
+      duration: 0.45,
+    });
+    if (sheenRef.current) {
+      gsap.to(sheenRef.current, {
+        opacity: 0,
+        duration: 0.35,
+      });
+    }
+  };
 
   return (
     <div
-      className={`relative flex items-center justify-center select-none ${
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={`relative flex items-center justify-center select-none cursor-pointer ${
         isLarge ? 'w-36 h-40' : 'w-24 h-28'
       }`}
+      style={{ transformStyle: 'preserve-3d' }}
     >
       {/* 3D Outer Hexagon Drop Shadow & Bevel */}
       <div
@@ -65,6 +117,15 @@ const Hexagonal3DBadge: React.FC<{
               clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)',
             }}
           >
+            {/* Holographic Cursor Tracking Sheen Layer */}
+            <div
+              ref={sheenRef}
+              className="absolute inset-0 opacity-0 pointer-events-none z-10 transition-opacity duration-200"
+              style={{
+                clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)',
+              }}
+            />
+
             {/* 3D Top Facet Specular Light Sheen */}
             <div
               className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/15 to-transparent pointer-events-none"
@@ -238,6 +299,41 @@ export const AchievementsPage: React.FC = () => {
   const unlockedCount = BADGES_COLLECTION.filter((b) => b.unlocked).length;
   const totalXP = BADGES_COLLECTION.reduce((acc, b) => (b.unlocked ? acc + b.xpReward : acc), 0);
 
+  // GSAP Badge Card Stagger on mount
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.achievements-header-title',
+        { opacity: 0, y: 14, filter: 'blur(3px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power2.out' }
+      );
+      gsap.fromTo(
+        '.achievement-badge-card',
+        { opacity: 0, y: 22, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, stagger: 0.04, duration: 0.5, ease: 'back.out(1.2)', delay: 0.1 }
+      );
+    });
+    return () => ctx.revert();
+  }, []);
+
+  // GSAP 3D Burst Reveal when a badge is inspected
+  useEffect(() => {
+    if (selectedBadge) {
+      requestAnimationFrame(() => {
+        gsap.fromTo(
+          '.badge-modal-content',
+          { scale: 0.65, opacity: 0, y: 24 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: 'back.out(1.5)' }
+        );
+        gsap.fromTo(
+          '.badge-burst-particle',
+          { scale: 0, opacity: 1 },
+          { scale: 1.6, opacity: 0, stagger: 0.05, duration: 0.65, ease: 'power2.out' }
+        );
+      });
+    }
+  }, [selectedBadge]);
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 relative selection:bg-blue-100 text-slate-800">
       {/* Light Radial Ambient Glow */}
@@ -255,8 +351,8 @@ export const AchievementsPage: React.FC = () => {
             </span>
             <span className="text-xs text-slate-500 font-mono">{unlockedCount} / {BADGES_COLLECTION.length} Unlocked</span>
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            Gamified Badges & Rank Medals
+          <h1 className="achievements-header-title font-display text-3xl sm:text-4xl font-bold tracking-tight">
+            Gamified <span className="text-shimmer-gradient">Badges & Rank Medals</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 font-sans">
             Earn high-status 3D hexagonal badges and medals as you solve concept puzzles, maintain focus streaks, and pass timed exams.
@@ -336,7 +432,7 @@ export const AchievementsPage: React.FC = () => {
                 whileHover={{ scale: 1.04, y: -4 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setSelectedBadge(badge)}
-                className={`relative flex flex-col items-center p-5 rounded-3xl border transition-all cursor-pointer group ${
+                className={`achievement-badge-card relative flex flex-col items-center p-5 rounded-3xl border transition-all cursor-pointer group ${
                   badge.unlocked
                     ? 'bg-white border-slate-200/90 shadow-md hover:shadow-xl'
                     : 'bg-slate-50/80 border-slate-200/50 opacity-65 grayscale'
@@ -377,13 +473,26 @@ export const AchievementsPage: React.FC = () => {
         description="View unlock criteria, rank status, and earned gamification points."
       >
         {selectedBadge && (
-          <div className="space-y-6 pt-3 text-center">
+          <div className="badge-modal-content space-y-6 pt-3 text-center relative overflow-hidden">
+            {/* Burst Particles */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="badge-burst-particle absolute w-2 h-2 rounded-full bg-amber-400"
+                  style={{
+                    transform: `rotate(${i * 45}deg) translate(80px)`,
+                  }}
+                />
+              ))}
+            </div>
+
             {/* BIG 3D HEXAGON BADGE DISPLAY */}
-            <div className="py-2 flex justify-center">
+            <div className="py-2 flex justify-center relative z-10">
               <Hexagonal3DBadge badge={selectedBadge} size="lg" />
             </div>
 
-            <div>
+            <div className="relative z-10">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <span className="px-3 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-mono font-bold">
                   {selectedBadge.tier} Tier

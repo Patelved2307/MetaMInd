@@ -82,7 +82,7 @@ export const SignUpPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/onboarding', { replace: true });
+      navigate('/app/chat', { replace: true });
     } catch (err: any) {
       setErrors({
         auth: err.message || 'Failed to create account. Please try again.',

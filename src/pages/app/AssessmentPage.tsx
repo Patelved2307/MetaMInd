@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { useLearning } from '@/features/learning';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl } from '@/lib/avatarGenerator';
@@ -64,7 +65,40 @@ export const AssessmentPage: React.FC = () => {
   const handleOptionSelect = (option: string) => {
     if (submittedAnalysis) return;
     setSelectedOption(option);
+
+    // Tactile 3D Flip-Slide Option Selection
+    requestAnimationFrame(() => {
+      const activeEl = document.querySelector(`[data-option-val="${encodeURIComponent(option)}"]`);
+      if (activeEl) {
+        const letterEl = activeEl.querySelector('.option-letter-badge');
+        if (letterEl) {
+          gsap.fromTo(
+            letterEl,
+            { rotateY: 180, scale: 0.8 },
+            { rotateY: 0, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }
+          );
+        }
+        gsap.fromTo(
+          activeEl,
+          { x: 10, scale: 1.01 },
+          { x: 0, scale: 1, duration: 0.35, ease: 'back.out(1.4)' }
+        );
+      }
+    });
   };
+
+  // 3D Card Flip Reveal on submit
+  useEffect(() => {
+    if (submittedAnalysis) {
+      requestAnimationFrame(() => {
+        gsap.fromTo(
+          '.option-card-row',
+          { rotateX: 22, opacity: 0.85 },
+          { rotateX: 0, opacity: 1, duration: 0.45, ease: 'back.out(1.3)', stagger: 0.06 }
+        );
+      });
+    }
+  }, [submittedAnalysis]);
 
   const handleAnswerSubmit = async () => {
     if (!currentQuestion || !selectedOption) return;
@@ -260,15 +294,16 @@ export const AssessmentPage: React.FC = () => {
                   <motion.button
                     key={idx}
                     type="button"
+                    data-option-val={encodeURIComponent(option)}
                     whileHover={{ scale: submittedAnalysis ? 1 : 1.01 }}
                     whileTap={{ scale: submittedAnalysis ? 1 : 0.99 }}
                     onClick={() => handleOptionSelect(option)}
                     disabled={!!submittedAnalysis}
-                    className={`w-full p-4 sm:p-4.5 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer group ${cardClasses}`}
+                    className={`option-card-row w-full p-4 sm:p-4.5 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer group ${cardClasses}`}
                   >
                     <div className="flex items-center gap-3.5 pr-2">
                       <span
-                        className={`w-7 h-7 rounded-xl border flex items-center justify-center text-xs font-mono font-bold transition-colors shrink-0 ${letterClasses}`}
+                        className={`option-letter-badge w-7 h-7 rounded-xl border flex items-center justify-center text-xs font-mono font-bold transition-colors shrink-0 ${letterClasses}`}
                       >
                         {letterKey}
                       </span>

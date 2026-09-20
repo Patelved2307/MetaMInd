@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { useLearning } from '@/features/learning';
 import { useAuth } from '@/features/auth';
 import { examService, type ExamDifficulty, type ExamQuestion } from '@/features/exam';
@@ -89,12 +90,52 @@ export const ExamPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [examStarted, examFinished, correctCount, lives]);
 
+  // GSAP animation on question change or difficulty card entrance
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      if (!examStarted) {
+        gsap.fromTo(
+          '.exam-difficulty-card',
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: 'power2.out' }
+        );
+      } else if (!examFinished) {
+        gsap.fromTo(
+          '.exam-option-row',
+          { opacity: 0, x: 16 },
+          { opacity: 1, x: 0, duration: 0.35, stagger: 0.05, ease: 'power2.out' }
+        );
+      }
+    });
+    return () => ctx.revert();
+  }, [currentIndex, examStarted, examFinished]);
+
   const handleSelectAnswer = (question: ExamQuestion, option: string) => {
     if (userAnswers[question.id] || examFinished) return;
 
     const isCorrect = option === question.correctAnswer;
     const updatedAnswers = { ...userAnswers, [question.id]: option };
     setUserAnswers(updatedAnswers);
+
+    // Tactile 3D Flip-Slide Option Selection
+    requestAnimationFrame(() => {
+      const activeEl = document.querySelector(`[data-exam-option="${encodeURIComponent(option)}"]`);
+      if (activeEl) {
+        const letterEl = activeEl.querySelector('.exam-letter-badge');
+        if (letterEl) {
+          gsap.fromTo(
+            letterEl,
+            { rotateY: 180, scale: 0.8 },
+            { rotateY: 0, scale: 1, duration: 0.35, ease: 'back.out(1.6)' }
+          );
+        }
+        gsap.fromTo(
+          activeEl,
+          { x: 10, scale: 1.01 },
+          { x: 0, scale: 1, duration: 0.35, ease: 'back.out(1.4)' }
+        );
+      }
+    });
 
     let newLives = lives;
     let newCorrect = correctCount;
@@ -177,8 +218,8 @@ export const ExamPage: React.FC = () => {
             </span>
             <span className="text-xs text-slate-500 font-mono">{subjectName}</span>
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            Official Exam: {topicName}
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
+            Official Exam: <span className="text-shimmer-gradient">{topicName}</span>
           </h1>
         </div>
 
@@ -241,7 +282,7 @@ export const ExamPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleStartExam('easy')}
-              className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
+              className="exam-difficulty-card p-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-emerald-700">EASY</span>
@@ -254,7 +295,7 @@ export const ExamPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleStartExam('medium')}
-              className="p-5 rounded-2xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
+              className="exam-difficulty-card p-5 rounded-2xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-amber-700">MEDIUM</span>
@@ -267,7 +308,7 @@ export const ExamPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleStartExam('hard')}
-              className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
+              className="exam-difficulty-card p-5 rounded-2xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 transition-all text-left space-y-2 cursor-pointer group shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-rose-700">HARD</span>
@@ -350,12 +391,13 @@ export const ExamPage: React.FC = () => {
                     <button
                       key={idx}
                       type="button"
+                      data-exam-option={encodeURIComponent(option)}
                       disabled={!!userAnswers[currentQuestion.id]}
                       onClick={() => handleSelectAnswer(currentQuestion, option)}
-                      className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer shadow-sm ${style}`}
+                      className={`exam-option-row w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer shadow-sm ${style}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-mono font-bold text-slate-600">
+                        <span className="exam-letter-badge w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-mono font-bold text-slate-600">
                           {String.fromCharCode(65 + idx)}
                         </span>
                         <span className="text-sm">{option}</span>

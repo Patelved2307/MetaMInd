@@ -33,33 +33,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 
-  // User hasn't completed onboarding -> redirect to /onboarding
+  // Direct users to primary AI Chatbot Workspace
   if (requireOnboardingCompleted && profile && !profile.onboarding_completed) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/app/chat" replace />;
   }
 
   return <Outlet />;
 };
 
 export const OnboardingRoute: React.FC = () => {
-  const { user, profile, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#05070A] flex flex-col items-center justify-center p-4">
-        <LoadingState message="Loading onboarding session..." size="lg" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/sign-in" replace />;
-  }
-
-  // Already completed onboarding -> redirect to dashboard
-  if (profile && profile.onboarding_completed) {
-    return <Navigate to="/app/dashboard" replace />;
-  }
-
-  return <Outlet />;
+  return <Navigate to="/app/chat" replace />;
 };

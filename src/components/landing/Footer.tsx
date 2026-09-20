@@ -75,8 +75,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/onboarding" className="hover:text-white transition-colors">
-                  Learner Onboarding
+                <Link to="/app/chat" className="hover:text-white transition-colors">
+                  AI Chatbot Workspace
                 </Link>
               </li>
             </ul>

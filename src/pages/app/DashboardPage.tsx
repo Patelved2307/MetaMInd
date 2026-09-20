@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { useAuth } from '@/features/auth';
 import {
   Search,
@@ -127,6 +128,89 @@ export const DashboardPage: React.FC = () => {
     { name: 'Fast Learner', icon: Zap, color: 'bg-orange-100 text-orange-600' },
   ];
 
+  // GSAP Bento Grid Stagger, Hero Text Animation & RoundProps Counters
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // 1. Hero Text Reveal & Mascot Speech Bubble Pop
+      gsap.fromTo(
+        '.dashboard-hero-title',
+        { opacity: 0, y: 16, filter: 'blur(4px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power2.out' }
+      );
+      gsap.fromTo(
+        '.dashboard-mascot-quote',
+        { opacity: 0, scale: 0.92, y: 10 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.65, ease: 'back.out(1.4)', delay: 0.15 }
+      );
+
+      // 2. Bento Card Stagger Entrance
+      gsap.fromTo(
+        '.dashboard-bento-card',
+        { opacity: 0, y: 22, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, stagger: 0.05, duration: 0.55, ease: 'back.out(1.1)', delay: 0.1 }
+      );
+
+      // 3. Continuous Breathing Pulse for Streak Flame
+      gsap.to('.streak-flame-icon', {
+        scale: 1.15,
+        rotate: 4,
+        repeat: -1,
+        yoyo: true,
+        duration: 1.2,
+        ease: 'sine.inOut',
+      });
+
+      // 4. RoundProps Numerical Counter for Streak (0 -> 5 Days)
+      const streakTarget = { val: 0 };
+      const streakEl = document.getElementById('dashboard-streak-count');
+      if (streakEl) {
+        gsap.to(streakTarget, {
+          val: 5,
+          duration: 1.3,
+          ease: 'power2.out',
+          roundProps: 'val',
+          onUpdate: () => {
+            streakEl.innerText = `${streakTarget.val} Days`;
+          },
+        });
+      }
+
+      // 5. RoundProps for Subject Mastery Percentages & Width Tweens
+      subjectProgress.forEach((sub) => {
+        const pctTarget = { val: 0 };
+        const pctEl = document.getElementById(`sub-pct-${sub.id}`);
+        const barEl = document.getElementById(`sub-bar-${sub.id}`);
+        if (pctEl) {
+          gsap.to(pctTarget, {
+            val: sub.percentage,
+            duration: 1.4,
+            ease: 'power2.out',
+            roundProps: 'val',
+            onUpdate: () => {
+              pctEl.innerText = `${pctTarget.val}%`;
+            },
+          });
+        }
+        if (barEl) {
+          gsap.fromTo(
+            barEl,
+            { width: '0%' },
+            { width: `${sub.percentage}%`, duration: 1.4, ease: 'power2.out', delay: 0.15 }
+          );
+        }
+      });
+
+      // 6. Learning Journey Mini-Chart Elastic Bounce
+      gsap.fromTo(
+        '.learning-bar-item',
+        { scaleY: 0, transformOrigin: 'bottom' },
+        { scaleY: 1, stagger: 0.08, duration: 0.85, ease: 'back.out(1.8)', delay: 0.25 }
+      );
+    });
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div className="space-y-6 max-w-[1340px] mx-auto pb-12 font-sans selection:bg-blue-100">
       {/* TOP HEADER BAR MATCHING SHARED IMAGE */}
@@ -177,9 +261,9 @@ export const DashboardPage: React.FC = () => {
           {/* WELCOME BANNER WITH ROBOT QUOTE */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-1">
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
+              <h1 className="dashboard-hero-title text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
                 Good Morning, <span className="inline-block">☀️</span>
-                <span className="block mt-0.5 text-slate-900">{displayName}!</span>
+                <span className="block mt-0.5 text-shimmer-gradient">{displayName}!</span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-normal">
                 Keep going! You're doing great. Here's what's next in your learning journey.
@@ -187,7 +271,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Mascot Speech Bubble Quote Card */}
-            <div className="flex items-center gap-3 p-3.5 sm:px-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-white border border-blue-100/80 rounded-2xl shadow-xs max-w-sm">
+            <div className="dashboard-mascot-quote flex items-center gap-3 p-3.5 sm:px-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-white border border-blue-100/80 rounded-2xl shadow-xs max-w-sm">
               <div className="w-10 h-10 rounded-2xl bg-blue-100/80 flex items-center justify-center shrink-0 shadow-xs text-xl">
                 🤖
               </div>
@@ -223,13 +307,13 @@ export const DashboardPage: React.FC = () => {
                   <div
                     key={sub.id}
                     onClick={() => navigate('/app/chat', { state: { initialPrompt: `Let's study ${sub.title}` } })}
-                    className="p-4 bg-white border border-slate-200/70 rounded-2xl shadow-xs hover:shadow-md hover:border-indigo-200 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-3 group"
+                    className="dashboard-bento-card p-4 bg-white border border-slate-200/70 rounded-2xl shadow-xs hover:shadow-md hover:border-indigo-200 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-3 group"
                   >
                     <div className="flex items-center justify-between">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${sub.iconBg} group-hover:scale-105 transition-transform`}>
                         <Icon className="w-4 h-4" />
                       </div>
-                      <span className="text-xs font-bold text-slate-800 font-mono">{sub.percentage}%</span>
+                      <span id={`sub-pct-${sub.id}`} className="text-xs font-bold text-slate-800 font-mono">{sub.percentage}%</span>
                     </div>
 
                     <div>
@@ -238,6 +322,7 @@ export const DashboardPage: React.FC = () => {
                       </h3>
                       <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
                         <div
+                          id={`sub-bar-${sub.id}`}
                           className={`h-full rounded-full transition-all duration-500 ${sub.progressColor}`}
                           style={{ width: `${sub.percentage}%` }}
                         />
@@ -251,7 +336,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* CONTINUE LEARNING HERO BANNER */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-7 shadow-xs hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="dashboard-bento-card bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-7 shadow-xs hover:shadow-md transition-shadow relative overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
               {/* Left Laptop Illustration */}
               <div className="md:col-span-3 flex flex-col items-center justify-center p-3 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 rounded-2xl border border-blue-100/60">
@@ -346,7 +431,7 @@ export const DashboardPage: React.FC = () => {
           {/* RECENT ACTIVITY & LEARNING JOURNEY GRID */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
             {/* Recent Activity (7 Cols) */}
-            <div className="md:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3.5">
+            <div className="dashboard-bento-card md:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3.5">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
                   <ClockIcon className="w-4 h-4 text-slate-500" />
@@ -392,7 +477,7 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Your Learning Journey (5 Cols) */}
-            <div className="md:col-span-5 bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4">
+            <div className="dashboard-bento-card md:col-span-5 bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-indigo-600">
                   <TrendingUp className="w-4 h-4" />
@@ -405,11 +490,11 @@ export const DashboardPage: React.FC = () => {
 
               {/* Graphic Bar Chart Visualization matching image */}
               <div className="flex items-end justify-between gap-2 h-20 px-2 py-1 bg-slate-50/70 rounded-2xl border border-slate-100">
-                <div className="w-full bg-indigo-200 h-[35%] rounded-md transition-all hover:bg-indigo-500" />
-                <div className="w-full bg-indigo-300 h-[50%] rounded-md transition-all hover:bg-indigo-500" />
-                <div className="w-full bg-indigo-400 h-[45%] rounded-md transition-all hover:bg-indigo-500" />
-                <div className="w-full bg-indigo-500 h-[70%] rounded-md transition-all hover:bg-indigo-600" />
-                <div className="w-full bg-indigo-600 h-[90%] rounded-md transition-all hover:bg-indigo-700 shadow-xs" />
+                <div className="learning-bar-item w-full bg-indigo-200 h-[35%] rounded-md transition-all hover:bg-indigo-500" />
+                <div className="learning-bar-item w-full bg-indigo-300 h-[50%] rounded-md transition-all hover:bg-indigo-500" />
+                <div className="learning-bar-item w-full bg-indigo-400 h-[45%] rounded-md transition-all hover:bg-indigo-500" />
+                <div className="learning-bar-item w-full bg-indigo-500 h-[70%] rounded-md transition-all hover:bg-indigo-600" />
+                <div className="learning-bar-item w-full bg-indigo-600 h-[90%] rounded-md transition-all hover:bg-indigo-700 shadow-xs" />
               </div>
 
               <button
@@ -427,14 +512,14 @@ export const DashboardPage: React.FC = () => {
         {/* RIGHT SIDEBAR WIDGETS COLUMN (4 Cols) */}
         <div className="lg:col-span-4 space-y-5">
           {/* LEARNING STREAK CARD */}
-          <div className="p-5 bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/70 rounded-3xl shadow-xs flex items-center justify-between">
+          <div className="dashboard-bento-card p-5 bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/70 rounded-3xl shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-xs">
+              <div className="streak-flame-icon w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-xs select-none">
                 🔥
               </div>
               <div>
                 <span className="text-[11px] font-semibold text-amber-800">Learning Streak</span>
-                <h4 className="text-xl font-extrabold text-slate-900 tracking-tight font-display">
+                <h4 id="dashboard-streak-count" className="text-xl font-extrabold text-slate-900 tracking-tight font-display">
                   5 Days
                 </h4>
                 <p className="text-[11px] text-amber-700 font-medium">Keep it up! You're on fire!</p>
@@ -451,7 +536,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* ACHIEVEMENTS WIDGET (2x3 Grid) */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3.5">
+          <div className="dashboard-bento-card bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between pb-1">
               <h3 className="text-xs sm:text-sm font-bold text-slate-900">Achievements</h3>
               <button
@@ -486,7 +571,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* TODAY'S FOCUS WIDGET */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3">
+          <div className="dashboard-bento-card bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Target className="w-4 h-4" />
@@ -509,7 +594,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* NEED HELP? METAMIND ASSISTANT WIDGET */}
-          <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-white border border-blue-100/80 rounded-3xl p-5 shadow-xs space-y-3.5">
+          <div className="dashboard-bento-card bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-white border border-blue-100/80 rounded-3xl p-5 shadow-xs space-y-3.5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white shadow-xs border border-blue-100 flex items-center justify-center text-xl shrink-0">
                 🤖

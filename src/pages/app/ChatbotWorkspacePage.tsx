@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import gsap from 'gsap';
 import { useAuth } from '@/features/auth';
 import {
   chatService,
@@ -42,6 +43,8 @@ import {
   UploadCloud,
   Puzzle,
   Download,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import LoaderGrid from '@/components/ui/loader-grid';
 
@@ -348,10 +351,192 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
-  // Auto-scroll chat to bottom
+  const lastAnimatedMsgIdRef = useRef<string | null>(null);
+  const prevSessionIdRef = useRef<string | null>(null);
+
+  // GSAP Staggered Message Cascade & Spring Reveal
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeSession?.messages, isAiThinking]);
+    if (!activeSession?.messages || activeSession.messages.length === 0) return;
+
+    // Case 1: Switched chat sessions -> stagger animate conversation thread
+    if (prevSessionIdRef.current !== activeSession.id) {
+      prevSessionIdRef.current = activeSession.id;
+      const lastMsg = activeSession.messages[activeSession.messages.length - 1];
+      lastAnimatedMsgIdRef.current = lastMsg?.id || null;
+
+      requestAnimationFrame(() => {
+        gsap.fromTo(
+          '.chat-message-row',
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, stagger: 0.04, duration: 0.35, ease: 'power2.out' }
+        );
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
+      return;
+    }
+
+    // Case 2: New message arrived in current session
+    const latestMessage = activeSession.messages[activeSession.messages.length - 1];
+    if (latestMessage && latestMessage.id !== lastAnimatedMsgIdRef.current) {
+      lastAnimatedMsgIdRef.current = latestMessage.id;
+
+      requestAnimationFrame(() => {
+        const msgRow = document.getElementById(`msg-${latestMessage.id}`);
+        if (!msgRow) return;
+
+        if (latestMessage.sender === 'user') {
+          // User Message: Spring Reveal
+          gsap.fromTo(
+            msgRow,
+            { opacity: 0, y: 16, scale: 0.96 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.4)' }
+          );
+        } else {
+          // AI Reply: Choreographed Staggered Message Cascade
+          const avatar = msgRow.querySelector('.ai-avatar');
+          const bubble = msgRow.querySelector('.ai-bubble');
+          const diagnostic = msgRow.querySelector('.ai-diagnostic');
+          const quizItems = msgRow.querySelectorAll('.ai-quiz-item');
+          const actions = msgRow.querySelector('.ai-actions');
+
+          const tl = gsap.timeline();
+
+          // Beat 1: Avatar Pop In with bounce
+          if (avatar) {
+            tl.fromTo(
+              avatar,
+              { scale: 0.6, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2)' }
+            );
+          }
+
+          // Beat 2: Main Bubble Springs Up
+          if (bubble) {
+            tl.fromTo(
+              bubble,
+              { y: 22, opacity: 0, scale: 0.98 },
+              { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'power3.out' },
+              avatar ? '-=0.2' : 0
+            );
+          }
+
+          // Beat 3: Diagnostic Card Drawer Unfolds
+          if (diagnostic) {
+            tl.fromTo(
+              diagnostic,
+              { y: 18, opacity: 0, scale: 0.97 },
+              { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.2)' },
+              '-=0.15'
+            );
+          }
+
+          // Beat 4: Quiz Challenge Cards Cascade in with Stagger
+          if (quizItems && quizItems.length > 0) {
+            tl.fromTo(
+              quizItems,
+              { y: 12, opacity: 0 },
+              { y: 0, opacity: 1, stagger: 0.08, duration: 0.3, ease: 'power2.out' },
+              '-=0.1'
+            );
+          }
+
+          // Beat 5: Export / Followup Actions Slide In
+          if (actions) {
+            tl.fromTo(
+              actions,
+              { opacity: 0, y: 8 },
+              { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
+              '-=0.1'
+            );
+          }
+        }
+
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 50);
+      });
+    }
+  }, [activeSession?.id, activeSession?.messages]);
+
+  // Auto-scroll chat to bottom when thinking
+  useEffect(() => {
+    if (isAiThinking) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isAiThinking]);
+
+  // Determine if the current session is fresh (empty or only has default greeting)
+  const isFreshSession =
+    !activeSession?.messages ||
+    activeSession.messages.length === 0 ||
+    (activeSession.messages.length === 1 && activeSession.messages[0].sender === 'assistant');
+
+  const starterCards = [
+    {
+      badge: 'Concept Discovery',
+      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+      icon: '🧠',
+      title: 'SQL JOINs & Relational Logic',
+      desc: 'Visual breakdown of INNER, LEFT, and FULL outer joins with diagrams',
+      prompt: 'Explain SQL JOINs & table relationships with visual diagrams and examples',
+    },
+    {
+      badge: 'Bug & Memory Diagnostics',
+      badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      icon: '💻',
+      title: 'Recursion & Call Stacks',
+      desc: 'Diagnose base case termination & prevent stack overflow errors',
+      prompt: 'How do recursion call stack frames work and how to prevent stack overflow?',
+    },
+    {
+      badge: 'Active Recall Quiz',
+      badgeColor: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      icon: '📝',
+      title: 'Binary Search Tree Quiz',
+      desc: 'Test your understanding with 3 adaptive diagnostic questions',
+      prompt: 'Generate 3 interactive practice quiz questions on binary search trees',
+    },
+    {
+      badge: 'Exam Prep Guide',
+      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+      icon: '📑',
+      title: 'Computer Networks Sheet',
+      desc: 'Generate complete revision roadmap covering OSI layers & TCP/IP',
+      prompt: 'Create a comprehensive exam study revision sheet for computer networks',
+    },
+  ];
+
+  // GSAP Entrance for Centered Welcome Workspace
+  useEffect(() => {
+    if (isFreshSession) {
+      requestAnimationFrame(() => {
+        const tl = gsap.timeline();
+        tl.fromTo(
+          '.welcome-hero',
+          { opacity: 0, y: 22, scale: 0.96 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.2)' }
+        )
+        .fromTo(
+          '.welcome-prompt-box',
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          '-=0.2'
+        )
+        .fromTo(
+          '.welcome-chips button',
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, stagger: 0.05, duration: 0.35, ease: 'power1.out' },
+          '-=0.15'
+        )
+        .fromTo(
+          '.welcome-starter-card',
+          { opacity: 0, y: 18, scale: 0.96 },
+          { opacity: 1, y: 0, scale: 1, stagger: 0.08, duration: 0.45, ease: 'back.out(1.3)' },
+          '-=0.1'
+        );
+      });
+    }
+  }, [isFreshSession, activeSession?.id]);
 
   // Attachment Handler
   const handleFilesAdded = (files: FileList | File[]) => {
@@ -553,12 +738,6 @@ export const ChatbotWorkspacePage: React.FC = () => {
       new Date(s.createdAt).toDateString() !== yesterdayStr
   );
 
-  const quickActionChips = [
-    { label: 'Deep Search', icon: '🔍', prompt: 'Deep search and explain the fundamental concepts of database indexing' },
-    { label: 'Explain Concept', icon: '💡', prompt: 'Explain how SQL JOINs work with visual diagrams and examples' },
-    { label: 'Practice Quiz', icon: '📝', prompt: 'Generate 3 interactive practice quiz questions on binary search trees' },
-    { label: 'Generate Notes', icon: '📑', prompt: 'Create a comprehensive exam study revision sheet for computer networks' },
-  ];
 
   // Helper to render attachment chips in input box
   const renderAttachmentChips = () => {
@@ -1061,69 +1240,85 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
         {/* Conversational Stream */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 relative z-10">
-          {!activeSession?.messages || activeSession.messages.length === 0 ? (
-            /* CENTERED WELCOME SCREEN */
-            <div className="max-w-xl mx-auto pt-14 sm:pt-20 text-center space-y-7 animate-in fade-in-50 duration-300">
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-display">
-                  Hey, How Can I Assist?
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
-                  Attach coursework documents, explore formulas, or ask questions to receive tailored cognitive diagnostics.
-                </p>
+          {isFreshSession ? (
+            /* CENTERED CREATIVE WELCOME WORKSPACE */
+            <div className="max-w-3xl mx-auto py-8 sm:py-12 space-y-8">
+              {/* Header Hero */}
+              <div className="welcome-hero text-center space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-linear-to-r from-indigo-50 via-purple-50 to-blue-50 border border-indigo-100/90 shadow-2xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-wider text-indigo-700 uppercase font-mono">
+                    MetaMind Cognitive Neural Workspace
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-display">
+                    Good day, <span className="text-shimmer-gradient">{registeredName}</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-lg mx-auto font-sans">
+                    Ask any doubt, attach coursework files, or explore real-time diagnostic reasoning drills customized to your study pace.
+                  </p>
+                </div>
               </div>
 
-              {/* Center Prompt Box */}
-              <div className="w-full bg-white border border-slate-200/90 rounded-3xl p-3 sm:p-4 shadow-lg shadow-slate-100 space-y-3 text-left">
+              {/* Center Interactive Prompt Box */}
+              <div className="welcome-prompt-box w-full bg-white border border-slate-200/90 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-3xl p-3.5 sm:p-4 shadow-xl shadow-slate-200/40 space-y-3 text-left transition-all">
                 {/* Attached File Chips */}
                 {renderAttachmentChips()}
 
                 <textarea
-                  rows={2}
-                  placeholder="Ask me anything or drag and drop study documents..."
+                  rows={3}
+                  placeholder="Ask any question, paste code snippets, or drop study notes..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="w-full text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none px-2 pt-1 font-sans"
+                  className="w-full text-sm sm:text-base text-slate-800 placeholder:text-slate-400 bg-transparent border-none outline-none resize-none px-2 pt-1 font-sans"
                 />
 
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-1.5">
                     {/* Attachment trigger button */}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                      title="Attach file (PDF, image, document)"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+                      title="Attach file (PDF, code, document)"
                     >
-                      <Paperclip className="w-4 h-4" />
+                      <Paperclip className="w-4 h-4 text-slate-400" />
+                      <span className="hidden sm:inline">Attach</span>
                     </button>
 
                     {/* Plugin Store quick shortcut */}
                     <button
                       type="button"
                       onClick={() => setIsPluginStoreOpen(true)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
                       title="Explore downloadable plugins"
                     >
-                      <Puzzle className="w-3.5 h-3.5 text-indigo-600" />
+                      <Puzzle className="w-4 h-4 text-indigo-600" />
                       <span>Plugins</span>
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-mono text-slate-400 hidden sm:inline-flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-indigo-500" />
                       {selectedModel}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleSendMessage()}
                       disabled={!inputMessage.trim() && currentAttachments.length === 0}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs ${
                         inputMessage.trim() || currentAttachments.length > 0
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                          ? 'bg-linear-to-r from-indigo-600 to-cyan-600 text-white hover:opacity-90 shadow-indigo-500/25 scale-100 active:scale-95'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       }`}
+                      title="Send prompt"
                     >
                       <ArrowUp className="w-4 h-4" />
                     </button>
@@ -1131,23 +1326,68 @@ export const ChatbotWorkspacePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Action Chips */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                {quickActionChips.map((chip, idx) => (
+              {/* Quick Topic Pills */}
+              <div className="welcome-chips flex flex-wrap items-center justify-center gap-2">
+                {[
+                  { label: '⚡ SQL Optimization', prompt: 'How does database indexing work and how do B-Trees optimize SQL query performance?' },
+                  { label: '🌳 Binary Search Trees', prompt: 'Explain the difference between Binary Search Trees and AVL self-balancing trees with search complexity.' },
+                  { label: '🌐 TCP 3-Way Handshake', prompt: 'Explain the TCP 3-way handshake vs UDP with packet sequence diagrams.' },
+                  { label: '🔄 Recursion & Stack Frames', prompt: 'How do recursive call stack frames work and how do you prevent stack overflow errors?' },
+                ].map((chip, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handleSendMessage(chip.prompt)}
-                    className="p-3 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl text-left transition-all hover:border-slate-300 shadow-2xs group cursor-pointer"
+                    className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/70 border border-slate-200/90 hover:border-indigo-300 rounded-full transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.5 cursor-pointer flex items-center gap-1.5"
                   >
-                    <div className="text-base mb-1 group-hover:scale-110 transition-transform">
-                      {chip.icon}
-                    </div>
-                    <div className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">
-                      {chip.label}
-                    </div>
+                    <span>{chip.label}</span>
                   </button>
                 ))}
+              </div>
+
+              {/* 4 Interactive Starter Capability Cards */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
+                    Suggested Diagnostic Workflows
+                  </span>
+                  <span className="text-xs text-indigo-600 font-medium">Click to run immediately</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {starterCards.map((card, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSendMessage(card.prompt)}
+                      className="welcome-starter-card group relative p-4 bg-white hover:bg-linear-to-br hover:from-white hover:to-indigo-50/30 border border-slate-200/90 hover:border-indigo-300 rounded-2xl text-left transition-all duration-200 shadow-2xs hover:shadow-md hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${card.badgeColor}`}>
+                            {card.badge}
+                          </span>
+                          <span className="text-xl group-hover:scale-115 transition-transform duration-200">
+                            {card.icon}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors font-display">
+                            {card.title}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            {card.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-xs font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity pt-3">
+                        <span>Launch prompt</span>
+                        <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -1158,13 +1398,14 @@ export const ChatbotWorkspacePage: React.FC = () => {
                 return (
                   <div
                     key={message.id}
-                    className={`flex gap-3 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
+                    id={`msg-${message.id}`}
+                    className={`chat-message-row flex gap-3 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     {!isUser && (
                       <img
                         src="/assets/brand/metamind_icon.png"
                         alt="MetaMind AI"
-                        className="w-8 h-8 rounded-xl object-contain border border-indigo-100 bg-white shadow-2xs shrink-0 p-0.5 mt-1"
+                        className="ai-avatar w-8 h-8 rounded-xl object-contain border border-indigo-100 bg-white shadow-2xs shrink-0 p-0.5 mt-1 will-change-transform"
                       />
                     )}
 
@@ -1202,7 +1443,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
                       {/* Main Bubble */}
                       <div
-                        className={`p-4 sm:p-5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-xs ${
+                        className={`ai-bubble p-4 sm:p-5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-xs will-change-transform ${
                           isUser
                             ? 'bg-slate-900 text-white rounded-br-xs font-sans'
                             : 'bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs'
@@ -1217,7 +1458,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
                       {/* Cognitive Diagnostic Card */}
                       {!isUser && message.diagnostic && (
-                        <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3 shadow-2xs">
+                        <div className="ai-diagnostic p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3 shadow-2xs will-change-transform">
                           <div className="flex items-center justify-between border-b border-indigo-100/80 pb-2">
                             <div className="flex items-center gap-2">
                               <Brain className="w-4 h-4 text-indigo-600" />
@@ -1238,7 +1479,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
                             return (
                               <div
                                 key={q.id}
-                                className="p-3 bg-white rounded-xl border border-slate-200/70 space-y-2 text-xs"
+                                className="ai-quiz-item p-3 bg-white rounded-xl border border-slate-200/70 space-y-2 text-xs will-change-transform"
                               >
                                 <div className="font-semibold text-slate-800">
                                   {q.question}
@@ -1279,7 +1520,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
                       {/* PDF Study Guide Action */}
                       {message.diagnostic && (
-                        <div className="mt-3 pt-2 border-t border-slate-100 flex justify-end">
+                        <div className="ai-actions mt-3 pt-2 border-t border-slate-100 flex justify-end will-change-transform">
                           <button
                             type="button"
                             onClick={() =>
@@ -1331,7 +1572,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
         </div>
 
         {/* BOTTOM DOCKED PROMPT INPUT (When in active conversation) */}
-        {activeSession?.messages && activeSession.messages.length > 0 && (
+        {!isFreshSession && (
           <div className="p-4 bg-white/95 border-t border-slate-100 backdrop-blur-xs relative z-20">
             <div className="max-w-3xl mx-auto bg-white border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-md space-y-2">
               {/* Attached file chips above input */}

@@ -1,19 +1,71 @@
-import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ArrowRight } from 'lucide-react';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const FeaturedVideoSection: React.FC = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const videoWrapperRef = useRef<HTMLDivElement>(null);
+  const captionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const videoWrapper = videoWrapperRef.current;
+    if (!section || !videoWrapper) return;
+
+    const ctx = gsap.context(() => {
+      // Cinematic Full-Bleed Scroll Expansion
+      gsap.fromTo(
+        videoWrapper,
+        {
+          scale: 0.9,
+          borderRadius: '40px',
+        },
+        {
+          scale: 1,
+          borderRadius: '24px',
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 85%',
+            end: 'center center',
+            scrub: 0.8,
+          },
+        }
+      );
+
+      // Subtle float on the minimal caption
+      if (captionRef.current) {
+        gsap.fromTo(
+          captionRef.current,
+          { opacity: 0.6, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 65%',
+              end: 'center center',
+              scrub: 0.8,
+            },
+          }
+        );
+      }
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section ref={ref} className="bg-black pt-6 md:pt-10 pb-20 md:pb-32 px-6 overflow-hidden">
+    <section ref={sectionRef} className="bg-black py-16 md:py-24 px-4 sm:px-6 overflow-hidden">
       <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
-          transition={{ duration: 0.9 }}
-          className="relative rounded-3xl overflow-hidden aspect-video border border-white/10 shadow-2xl"
+        <div
+          ref={videoWrapperRef}
+          className="relative rounded-3xl overflow-hidden aspect-video border border-white/10 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.9)] will-change-transform"
         >
           {/* Background Video */}
           <video
@@ -26,33 +78,32 @@ export const FeaturedVideoSection: React.FC = () => {
             className="w-full h-full object-cover"
           />
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
+          {/* Clean Vignette Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
-          {/* Overlay Content */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 z-10">
-            {/* Approach Glass Card */}
-            <div className="liquid-glass rounded-2xl p-6 md:p-8 max-w-lg">
-              <p className="text-white/50 text-xs tracking-widest uppercase mb-3 font-medium">
-                Our Core Learning Loop
+          {/* Minimal Floating Caption Bar */}
+          <div
+            ref={captionRef}
+            className="absolute bottom-0 inset-x-0 p-6 md:p-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 z-10 will-change-transform"
+          >
+            <div className="space-y-1">
+              <p className="text-white/40 text-[11px] font-mono uppercase tracking-widest">
+                Adaptive Feedback Engine
               </p>
-              <p className="text-white text-sm md:text-base leading-relaxed">
-                "Don't just get an answer. Understand what you need to learn next." MetaMind extracts prerequisites, generates adaptive diagnostic questions, detects knowledge gaps, and tailors explanations to your demonstrated level.
-              </p>
+              <h3 className="text-lg sm:text-2xl font-serif text-white tracking-tight">
+                See your thinking evolve in real time.
+              </h3>
             </div>
 
-            {/* Explore Button */}
-            <Link to="/sign-up">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="liquid-glass rounded-full px-8 py-3 text-white text-sm font-medium hover:bg-white/10 transition-colors shadow-lg"
-              >
-                Start Learning Journey
-              </motion.button>
+            <Link
+              to="/sign-up"
+              className="liquid-glass rounded-full px-6 py-2.5 text-white text-xs font-semibold hover:bg-white/15 transition-all flex items-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shrink-0 border border-white/20"
+            >
+              <span>Explore Platform</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#8DD3FF]" />
             </Link>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

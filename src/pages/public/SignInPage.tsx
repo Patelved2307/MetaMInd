@@ -67,7 +67,7 @@ export const SignInPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/onboarding', { replace: true });
+      navigate('/app/chat', { replace: true });
     } catch (err: any) {
       setErrors({
         auth: err.message || 'Invalid email or password. Please check your credentials.',

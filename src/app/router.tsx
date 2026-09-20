@@ -1,16 +1,13 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AppLayout } from './layouts/AppLayout';
-import { ProtectedRoute, OnboardingRoute } from '@/features/auth/ProtectedRoute';
+import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 
 // Public pages
 import { LandingPage } from '@/pages/public/LandingPage';
 import { SignInPage } from '@/pages/public/SignInPage';
 import { SignUpPage } from '@/pages/public/SignUpPage';
 import { SharedChatPage } from '@/pages/public/SharedChatPage';
-
-// Onboarding page
-import { OnboardingPage } from '@/pages/app/OnboardingPage';
 
 // Authenticated app pages
 import { ChatbotWorkspacePage } from '@/pages/app/ChatbotWorkspacePage';
@@ -44,10 +41,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/onboarding',
-    element: <OnboardingRoute />,
-    children: [
-      { index: true, element: <OnboardingPage /> },
-    ],
+    element: <Navigate to="/app/chat" replace />,
   },
   {
     path: '/app',

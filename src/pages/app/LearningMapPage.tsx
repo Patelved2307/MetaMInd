@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { useLearning } from '@/features/learning';
 import { useAuth } from '@/features/auth';
-import { downloadStudyGuidePdf } from '@/features/chat/studyGuidePdf';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import {
   Search,
   ArrowRight,
-  Brain,
-  Download,
-  Bot,
   Sparkles,
   CheckCircle2,
   ChevronRight,
   X,
+  Target,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -296,7 +294,6 @@ export const LearningMapPage: React.FC = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<string>('dbms');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
-  const [selectedChapterForModal, setSelectedChapterForModal] = useState<{ course: PredefinedCourse; chapter: CourseChapter } | null>(null);
   const [isStartingCheck, setIsStartingCheck] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
@@ -326,44 +323,81 @@ export const LearningMapPage: React.FC = () => {
       navigate('/app/assessment');
     } finally {
       setIsStartingCheck(false);
-      setSelectedChapterForModal(null);
     }
   };
 
-  const handleLaunchChat = (_courseTitle: string, _chapterTitle: string) => {
-    navigate('/app/chat');
-    setSelectedChapterForModal(null);
+  const handleLaunchPractice = (courseTitle: string, chapterTitle: string) => {
+    navigate(`/app/practice?topic=${encodeURIComponent(chapterTitle)}&course=${encodeURIComponent(courseTitle)}`);
   };
 
-  const handleDownloadPdf = (courseTitle: string, chapterTitle: string) => {
-    downloadStudyGuidePdf(
-      `${chapterTitle} - ${courseTitle}`,
-      {
-        topic: `${chapterTitle} (${courseTitle})`,
-        doubtSummary: `MetaMind Comprehensive Syllabus Revision Guide for ${chapterTitle}.`,
-        weakness: 'Handling complex architectural edge cases and runtime boundary parameters.',
-        strength: 'Strong conceptual intuition of core principles.',
-        confidenceScore: 88,
-        confidenceLevel: 'High',
-        keyTakeaways: [
-          'Deterministic Foundations & Invariant Rules',
-          'Minimal Test Case Verification & Schemas',
-          'State Evaluation & Production Edge Cases',
-          'Optimal Complexity & Algorithmic Bounds',
-        ],
-        quickCheck: [
-          {
-            id: 'qc_1',
-            question: `What is the primary constraint when evaluating ${chapterTitle}?`,
-            options: ['Ensure optimal execution complexity and invariant validity', 'Disregard edge cases', 'Rely purely on defaults', 'Skip prerequisite validation'],
-            correctIndex: 0,
-            explanation: 'Optimal systems require explicit invariant guarantees and bounded complexity.',
-          },
-        ],
-      },
-      studentFullName
-    );
-  };
+  // GSAP SVG Path Draw / Synapse Circuit Animation
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const path = document.querySelector<SVGPathElement>('#synapse-circuit-line');
+      if (path) {
+        const length = path.getTotalLength ? path.getTotalLength() : 800;
+        gsap.set(path, {
+          strokeDasharray: length,
+          strokeDashoffset: length,
+        });
+
+        const tl = gsap.timeline();
+        tl.to(path, {
+          strokeDashoffset: 0,
+          duration: 1.8,
+          ease: 'power2.inOut',
+        })
+        .fromTo(
+          '.synapse-node',
+          { opacity: 0, y: 16, scale: 0.94 },
+          { opacity: 1, y: 0, scale: 1, stagger: 0.12, duration: 0.5, ease: 'back.out(1.4)' },
+          '-=1.2'
+        );
+
+        // Continuous synaptic electrical pulse
+        const pulse1 = document.querySelector('.synapse-pulse-1');
+        const pulse2 = document.querySelector('.synapse-pulse-2');
+        if (pulse1 && pulse2) {
+          gsap.fromTo(
+            pulse1,
+            { cx: 80, cy: 30, opacity: 0 },
+            {
+              cx: 720,
+              cy: 30,
+              opacity: 1,
+              duration: 2.6,
+              repeat: -1,
+              ease: 'power1.inOut',
+              repeatDelay: 0.5,
+            }
+          );
+          gsap.fromTo(
+            pulse2,
+            { cx: 80, cy: 30, opacity: 0 },
+            {
+              cx: 720,
+              cy: 30,
+              opacity: 1,
+              duration: 2.6,
+              repeat: -1,
+              ease: 'power1.inOut',
+              delay: 1.3,
+              repeatDelay: 0.5,
+            }
+          );
+        }
+      }
+
+      // Stagger Course Cards
+      gsap.fromTo(
+        '.learning-course-card',
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, stagger: 0.07, duration: 0.5, ease: 'power2.out', delay: 0.15 }
+      );
+    });
+
+    return () => ctx.revert();
+  }, [activeCategory]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 font-sans selection:bg-teal-100">
@@ -377,7 +411,7 @@ export const LearningMapPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-            Hey {firstName},
+            Hey <span className="text-shimmer-gradient">{firstName}</span>,
           </h1>
           <p className="text-sm sm:text-base text-slate-500 font-sans mt-1">
             Your structured path from beginner concepts to certified subject mastery
@@ -431,26 +465,73 @@ export const LearningMapPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 4 Interactive Journey Nodes */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
-            {[
-              { step: '01', title: 'Pick Chapter', desc: 'Syllabus roadmap', icon: '🗺️', color: 'border-blue-500/40 bg-blue-500/10' },
-              { step: '02', title: 'Diagnostic', desc: 'Pinpoint exact gaps', icon: '🧪', color: 'border-emerald-500/40 bg-emerald-500/10' },
-              { step: '03', title: 'MetaMind AI', desc: 'Targeted coaching', icon: '💡', color: 'border-amber-500/40 bg-amber-500/10' },
-              { step: '04', title: '3D Badges', desc: 'Certified mastery', icon: '🏆', color: 'border-purple-500/40 bg-purple-500/10' },
-            ].map((s, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-2xl border ${s.color} backdrop-blur-xs space-y-1 transition-transform hover:-translate-y-1`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-lg">{s.icon}</span>
-                  <span className="text-[10px] font-mono font-bold text-slate-400">Step {s.step}</span>
+          {/* 4 Interactive Journey Nodes with SVG Synapse Circuit */}
+          <div className="relative flex-1">
+            {/* SVG Synapse Circuit Wire running across the nodes */}
+            <svg
+              className="absolute top-1/2 left-0 w-full -translate-y-1/2 h-20 pointer-events-none z-0 hidden sm:block overflow-visible"
+              viewBox="0 0 800 60"
+              preserveAspectRatio="none"
+              fill="none"
+            >
+              <defs>
+                <linearGradient id="synapseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.85" />
+                  <stop offset="35%" stopColor="#818CF8" stopOpacity="0.9" />
+                  <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#C084FC" stopOpacity="0.95" />
+                </linearGradient>
+                <filter id="synapseGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              {/* Background static circuit track */}
+              <path
+                d="M 80 30 Q 200 12 300 30 T 500 30 T 720 30"
+                stroke="rgba(255,255,255,0.14)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="4 4"
+              />
+
+              {/* Animated drawing synapse neural pathway */}
+              <path
+                id="synapse-circuit-line"
+                className="synapse-path"
+                d="M 80 30 Q 200 12 300 30 T 500 30 T 720 30"
+                stroke="url(#synapseGrad)"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                filter="url(#synapseGlow)"
+              />
+
+              {/* Synapse Pulse Particles */}
+              <circle className="synapse-pulse-1" r="5" fill="#38BDF8" filter="url(#synapseGlow)" />
+              <circle className="synapse-pulse-2" r="5" fill="#F59E0B" filter="url(#synapseGlow)" />
+            </svg>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10">
+              {[
+                { step: '01', title: 'Pick Chapter', desc: 'Syllabus roadmap', icon: '🗺️', color: 'border-blue-500/40 bg-blue-500/10' },
+                { step: '02', title: 'Diagnostic', desc: 'Pinpoint exact gaps', icon: '🧪', color: 'border-emerald-500/40 bg-emerald-500/10' },
+                { step: '03', title: 'MetaMind AI', desc: 'Targeted coaching', icon: '💡', color: 'border-amber-500/40 bg-amber-500/10' },
+                { step: '04', title: '3D Badges', desc: 'Certified mastery', icon: '🏆', color: 'border-purple-500/40 bg-purple-500/10' },
+              ].map((s, idx) => (
+                <div
+                  key={idx}
+                  className={`synapse-node p-3 rounded-2xl border ${s.color} backdrop-blur-xs space-y-1 transition-transform hover:-translate-y-1`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">{s.icon}</span>
+                    <span className="text-[10px] font-mono font-bold text-slate-400">Step {s.step}</span>
+                  </div>
+                  <div className="text-xs font-bold text-white">{s.title}</div>
+                  <div className="text-[10px] text-slate-300 leading-tight">{s.desc}</div>
                 </div>
-                <div className="text-xs font-bold text-white">{s.title}</div>
-                <div className="text-[10px] text-slate-300 leading-tight">{s.desc}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -486,7 +567,7 @@ export const LearningMapPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedCourseId(course.id)}
-                  className={`relative rounded-3xl p-5 sm:p-6 transition-all duration-200 cursor-pointer flex items-center justify-between overflow-hidden shadow-xs border ${
+                  className={`learning-course-card relative rounded-3xl p-5 sm:p-6 transition-all duration-200 cursor-pointer flex items-center justify-between overflow-hidden shadow-xs border ${
                     isSelected
                       ? 'ring-2 ring-slate-900 ring-offset-2 shadow-md'
                       : 'hover:shadow-md'
@@ -570,7 +651,7 @@ export const LearningMapPage: React.FC = () => {
               {activeCourse.chapters.map((chapter) => (
                 <div
                   key={chapter.id}
-                  onClick={() => setSelectedChapterForModal({ course: activeCourse, chapter })}
+                  onClick={() => navigate(`/app/module?course=${activeCourse.id}&chapter=${chapter.id}`)}
                   className="group flex items-start gap-3.5 p-2.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer border border-transparent hover:border-slate-100"
                 >
                   {/* Big Stylized 2-Digit Number */}
@@ -586,13 +667,23 @@ export const LearningMapPage: React.FC = () => {
                     <h5 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-slate-900 transition-colors leading-snug">
                       {chapter.title}
                     </h5>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400 font-mono">
+                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-slate-400 font-mono">
                       <span>Study time: {chapter.studyTime}</span>
                       {chapter.mastered && (
                         <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[9px] font-bold">
                           ✓ Ready
                         </span>
                       )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLaunchPractice(activeCourse.title, chapter.title);
+                        }}
+                        className="px-2 py-0.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer border border-indigo-200/60 shadow-2xs hover:scale-105"
+                      >
+                        <Target className="w-2.5 h-2.5 text-indigo-600" /> Practice
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -632,83 +723,6 @@ export const LearningMapPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* CHAPTER ACTION MODAL (Launch Diagnostic, AI Chat, PDF) */}
-      {/* ========================================================= */}
-      <AnimatePresence>
-        {selectedChapterForModal && (
-          <Dialog
-            isOpen={true}
-            onClose={() => setSelectedChapterForModal(null)}
-            title={`${selectedChapterForModal.chapter.number}. ${selectedChapterForModal.chapter.title}`}
-          >
-            <div className="space-y-5 pt-2">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-                <span className="font-bold text-slate-800">{selectedChapterForModal.course.title}</span>
-                <span>•</span>
-                <span>Study time: {selectedChapterForModal.chapter.studyTime}</span>
-                <span>•</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
-                  {selectedChapterForModal.chapter.difficulty}
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-                MetaMind provides three AI-powered learning methods for this topic. Choose how you would like to proceed:
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Option 1: AI Diagnostic Test */}
-                <div
-                  onClick={() => handleLaunchAssessment(selectedChapterForModal.course.title, selectedChapterForModal.chapter.title)}
-                  className="p-4 rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-all cursor-pointer text-center space-y-2 group shadow-2xs"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Brain className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-xs font-bold text-blue-950">Diagnostic Quiz</h4>
-                  <p className="text-[10px] text-blue-700 leading-tight">Pinpoint misconceptions & calculate mastery score</p>
-                </div>
-
-                {/* Option 2: AI Tutor Chat */}
-                <div
-                  onClick={() => handleLaunchChat(selectedChapterForModal.course.title, selectedChapterForModal.chapter.title)}
-                  className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 transition-all cursor-pointer text-center space-y-2 group shadow-2xs"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-xs font-bold text-indigo-950">Ask MetaMind AI</h4>
-                  <p className="text-[10px] text-indigo-700 leading-tight">Step-by-step conceptual chat with real examples</p>
-                </div>
-
-                {/* Option 3: Download PDF Guide */}
-                <div
-                  onClick={() => handleDownloadPdf(selectedChapterForModal.course.title, selectedChapterForModal.chapter.title)}
-                  className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-all cursor-pointer text-center space-y-2 group shadow-2xs"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Download className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-xs font-bold text-emerald-950">Download Study PDF</h4>
-                  <p className="text-[10px] text-emerald-700 leading-tight">Printable summary guide with formulas & rules</p>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectedChapterForModal(null)}
-                  className="cursor-pointer"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Dialog>
-        )}
-      </AnimatePresence>
 
       {/* HELP & GUIDELINES MODAL */}
       <AnimatePresence>

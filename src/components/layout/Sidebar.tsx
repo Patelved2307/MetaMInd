@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth';
 import {
@@ -39,6 +40,29 @@ export const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // GSAP desktop sidebar entrance upon authenticated load
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.sidebar-brand-anim',
+        { opacity: 0, x: -18, scale: 0.95 },
+        { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: 'back.out(1.4)' }
+      );
+      gsap.fromTo(
+        '.sidebar-nav-item',
+        { opacity: 0, x: -14 },
+        { opacity: 1, x: 0, duration: 0.45, stagger: 0.04, ease: 'power2.out', delay: 0.1 }
+      );
+      gsap.fromTo(
+        '.sidebar-footer-card',
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.35 }
+      );
+    });
+
+    return () => ctx.revert();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -90,7 +114,7 @@ export const Sidebar: React.FC = () => {
       >
         <div className="p-4 overflow-y-auto custom-scrollbar">
           {/* Brand Header with Official MetaMind Icon */}
-          <div className="flex items-center gap-2.5 px-2 py-3 mb-4">
+          <div className="sidebar-brand-anim flex items-center gap-2.5 px-2 py-3 mb-4">
             <img
               src="/assets/brand/metamind_icon.png"
               alt="MetaMind"
@@ -110,7 +134,7 @@ export const Sidebar: React.FC = () => {
                   onClick={() => setIsOpen(false)}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer',
+                      'sidebar-nav-item flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer',
                       isActive
                         ? 'bg-blue-50 text-blue-600 font-semibold shadow-xs'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -133,7 +157,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Bottom Motivational Plant Card & Profile */}
-        <div className="p-4 space-y-4">
+        <div className="sidebar-footer-card p-4 space-y-4">
           {/* Potted Plant Graphic note from shared design */}
           <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-50/60 to-indigo-50/40 border border-blue-100/70 flex items-center gap-3">
             <div className="text-2xl select-none shrink-0">🪴</div>
