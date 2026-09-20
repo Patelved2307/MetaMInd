@@ -95,7 +95,7 @@ export const SignInPage: React.FC = () => {
         quote="MetaMind makes complex topics click faster. It feels like having a brilliant tutor by your side."
         authorName="Elena Rostova"
         authorRole="Computer Science • 3rd Year"
-        avatarSrc="/assets/avatars/female/lofi_girl.png"
+        avatarSrc="lofi_headphones"
       />
 
       {/* RIGHT COLUMN: Clean, Modern & Human Input Section */}

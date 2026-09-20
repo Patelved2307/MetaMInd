@@ -14,6 +14,7 @@ import {
   Award,
   ArrowRight,
 } from 'lucide-react';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { Button } from '@/components/ui/Button';
 
 export interface SolverInfo {
@@ -103,10 +104,10 @@ export const ConnectSolverModal: React.FC<ConnectSolverModalProps> = ({
           {/* Header & Solver Identity */}
           <div className="flex items-start gap-4 pr-8">
             <div className="relative">
-              <img
-                src={solver.avatarUrl}
-                alt={solver.name}
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500/30 shadow-md ring-4 ring-indigo-50"
+              <GSAPAvatar
+                avatarId={solver.avatarUrl}
+                size="lg"
+                interactive={true}
               />
               <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full text-xs shadow">
                 <ShieldCheck className="w-3.5 h-3.5" />

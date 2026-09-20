@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { AvatarSelectorModal } from '@/components/ui/AvatarSelectorModal';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { generateAvatarUrl, getAvatarPresetByUrl, sanitizeAvatarUrl, SIGNATURE_AVATARS } from '@/lib/avatarGenerator';
 
 export const ProfilePage: React.FC = () => {
@@ -131,11 +132,11 @@ export const ProfilePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-4">
             <div className="relative group cursor-pointer" onClick={() => setIsAvatarModalOpen(true)}>
-              <img
-                src={avatarUrl}
-                alt="Profile Avatar"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-50 border-2 p-1 object-cover group-hover:scale-105 transition-transform shadow-xs"
-                style={{ borderColor: theme.primary }}
+              <GSAPAvatar
+                avatarId={avatarUrl}
+                size="lg"
+                interactive={true}
+                className="group-hover:scale-105 transition-transform"
               />
               <div
                 className="absolute -bottom-1 -right-1 w-6 h-6 text-white rounded-full border-2 border-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer"
@@ -396,20 +397,24 @@ export const ProfilePage: React.FC = () => {
             </label>
             <div className="grid grid-cols-5 gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200">
               {SIGNATURE_AVATARS.map((preset) => {
-                const isSelected = editForm.avatar_url === preset.url;
+                const isSelected = sanitizeAvatarUrl(editForm.avatar_url) === preset.id;
                 return (
                   <button
                     key={preset.id}
                     type="button"
-                    onClick={() => setEditForm({ ...editForm, avatar_url: preset.url })}
-                    className={`relative rounded-xl overflow-hidden border-2 p-1 transition-all cursor-pointer bg-white group hover:scale-105 ${
+                    onClick={() => setEditForm({ ...editForm, avatar_url: preset.id })}
+                    className={`relative rounded-2xl overflow-hidden border-2 p-2 flex flex-col items-center justify-center transition-all cursor-pointer bg-white group hover:scale-105 ${
                       isSelected ? 'border-indigo-600 shadow-md ring-2 ring-indigo-400/50' : 'border-slate-200 hover:border-slate-300'
                     }`}
+                    title={preset.name}
                   >
-                    <img src={preset.url} alt={preset.name} className="w-full h-12 rounded-lg object-cover" />
+                    <GSAPAvatar avatarId={preset.id} size="sm" interactive={false} />
+                    <span className="text-[10px] font-bold text-slate-700 mt-1 truncate max-w-full">
+                      {preset.name.split(' ')[0]}
+                    </span>
                     {isSelected && (
-                      <div className="absolute top-0.5 right-0.5 bg-indigo-600 text-white rounded-full p-0.5">
-                        <Check className="w-3 h-3" />
+                      <div className="absolute top-1 right-1 bg-indigo-600 text-white rounded-full p-0.5 shadow-xs">
+                        <Check className="w-2.5 h-2.5" />
                       </div>
                     )}
                   </button>

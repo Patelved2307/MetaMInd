@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabase/client';
 import type { SignUpData, SignInData, OnboardingData, UserProfile, ProfileUpdateData } from './auth.types';
+import { generateAvatarUrl } from '@/lib/avatarGenerator';
 
 export const authService = {
   // Sign up new user
@@ -144,7 +145,7 @@ export const authService = {
       id: userId,
       full_name: fullName,
       username: `user_${userId.substring(0, 8)}`,
-      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${userId}`,
+      avatar_url: generateAvatarUrl(userId),
       bio: null,
       education_level: null,
       field_of_study: null,

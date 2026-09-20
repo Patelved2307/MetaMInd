@@ -17,6 +17,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 
 interface NavItem {
   name: string;
@@ -173,10 +174,10 @@ export const Sidebar: React.FC = () => {
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 group flex-1 min-w-0 pr-2"
             >
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-8 h-8 rounded-lg bg-slate-100 object-cover border border-slate-200 shadow-xs"
+              <GSAPAvatar
+                avatarId={avatarUrl}
+                size="sm"
+                interactive={false}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600">

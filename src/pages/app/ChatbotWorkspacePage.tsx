@@ -15,12 +15,15 @@ import type {
 } from '@/features/chat/chat.types';
 import { downloadStudyGuidePdf } from '@/features/chat/studyGuidePdf';
 import { generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { FilePreviewModal } from '@/components/chat/FilePreviewModal';
 import { PluginMarketplaceModal } from '@/components/chat/PluginMarketplaceModal';
 import { ShareChatModal } from '@/components/chat/ShareChatModal';
+import { AvatarPlatformTourModal } from '@/components/ui/AvatarPlatformTourModal';
 import {
   Search,
   LayoutDashboard,
+  Compass,
   Trash2,
   PanelLeftClose,
   PanelLeft,
@@ -291,6 +294,18 @@ export const ChatbotWorkspacePage: React.FC = () => {
   const [isPluginStoreOpen, setIsPluginStoreOpen] = useState(false);
   const [sharingSession, setSharingSession] = useState<ChatSession | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  // Auto-launch avatar guide tutorial for new students on registration
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen');
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        setIsTourOpen(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
   const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null);
 
   // History 3-dots Menu & Inline Rename State
@@ -960,6 +975,13 @@ export const ChatbotWorkspacePage: React.FC = () => {
         onRemove={(id) => handleRemoveAttachment(id)}
       />
 
+      <AvatarPlatformTourModal
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        avatarUrl={avatarUrl}
+        userName={registeredName}
+      />
+
       {/* Hidden Global File Input for Attachment Button */}
       <input
         ref={fileInputRef}
@@ -1148,10 +1170,10 @@ export const ChatbotWorkspacePage: React.FC = () => {
         <div className="shrink-0 p-3 border-t border-slate-200/80 bg-slate-50/70">
           <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
             <div className="flex items-center gap-2.5 min-w-0 pr-1">
-              <img
-                src={avatarUrl}
-                alt={registeredName}
-                className="w-8 h-8 rounded-lg bg-slate-100 object-cover border border-slate-200 shrink-0"
+              <GSAPAvatar
+                avatarId={avatarUrl}
+                size="sm"
+                interactive={false}
               />
               <div className="min-w-0">
                 <div className="text-xs font-bold text-slate-800 truncate">{registeredName}</div>
@@ -1217,6 +1239,17 @@ export const ChatbotWorkspacePage: React.FC = () => {
                 <span className="hidden sm:inline">Share</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsTourOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200/90 rounded-xl transition-all cursor-pointer shadow-2xs group"
+              title="Platform Interactive Guide"
+            >
+              <GSAPAvatar avatarId={avatarUrl} size={18} interactive={false} />
+              <span className="hidden sm:inline">Guide Tour</span>
+              <Compass className="w-3.5 h-3.5 text-indigo-600 group-hover:rotate-45 transition-transform" />
+            </button>
 
             <button
               type="button"
@@ -1540,10 +1573,11 @@ export const ChatbotWorkspacePage: React.FC = () => {
                     </div>
 
                     {isUser && (
-                      <img
-                        src={avatarUrl}
-                        alt="User"
-                        className="w-8 h-8 rounded-xl bg-slate-100 object-cover border border-slate-200 shrink-0 shadow-2xs"
+                      <GSAPAvatar
+                        avatarId={avatarUrl}
+                        size="sm"
+                        interactive={false}
+                        className="shrink-0 shadow-2xs"
                       />
                     )}
                   </div>

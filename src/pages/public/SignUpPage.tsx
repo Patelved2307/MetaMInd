@@ -110,7 +110,7 @@ export const SignUpPage: React.FC = () => {
         quote="The adaptive roadmaps saved me hundreds of hours this semester. Concepts that took weeks now take days."
         authorName="Marcus Vance"
         authorRole="Pre-Med Scholar • 2nd Year"
-        avatarSrc="/assets/avatars/male/focus_boy.png"
+        avatarSrc="blue_focus"
       />
 
       {/* RIGHT COLUMN: Clean, Modern & Human Input Section */}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star } from 'lucide-react';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 
 interface AuthVisualSideProps {
   videoSrc: string;
@@ -89,12 +90,13 @@ export const AuthVisualSide: React.FC<AuthVisualSideProps> = ({
             "{quote}"
           </p>
 
-          {/* Human Author with Real Avatar */}
+          {/* Human Author with Animated Avatar */}
           <div className="flex items-center gap-3 pt-1 border-t border-white/10">
-            <img
-              src={avatarSrc}
-              alt={authorName}
-              className="w-9 h-9 rounded-full object-cover ring-1 ring-white/30"
+            <GSAPAvatar
+              avatarId={avatarSrc}
+              size="sm"
+              interactive={false}
+              className="ring-1 ring-white/30 rounded-full"
             />
             <div>
               <div className="text-xs font-bold text-white tracking-wide">

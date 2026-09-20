@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Dialog } from './Dialog';
 import { Button } from './Button';
-import { SIGNATURE_AVATARS } from '@/lib/avatarGenerator';
+import { SIGNATURE_AVATARS, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { Check, Sparkles, User } from 'lucide-react';
 
 interface AvatarSelectorModalProps {
@@ -83,7 +84,7 @@ export const AvatarSelectorModal: React.FC<AvatarSelectorModalProps> = ({
         {/* Filtered Avatars Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[380px] overflow-y-auto pr-1">
           {filteredPresets.map((preset) => {
-            const isSelected = currentAvatarUrl === preset.url;
+            const isSelected = sanitizeAvatarUrl(currentAvatarUrl) === preset.id;
             const theme = preset.theme;
 
             return (
@@ -91,7 +92,7 @@ export const AvatarSelectorModal: React.FC<AvatarSelectorModalProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => {
-                  onSelectAvatar(preset.url);
+                  onSelectAvatar(preset.id);
                   onClose();
                 }}
                 className={`group relative p-4 rounded-3xl border transition-all text-left flex items-center gap-4 cursor-pointer overflow-hidden ${
@@ -103,12 +104,13 @@ export const AvatarSelectorModal: React.FC<AvatarSelectorModalProps> = ({
                   borderColor: isSelected ? theme.primary : undefined,
                 }}
               >
-                {/* 3D Character Thumbnail */}
+                {/* GSAP Animated Vector Persona */}
                 <div className="relative shrink-0">
-                  <img
-                    src={preset.url}
-                    alt={preset.name}
-                    className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 object-cover group-hover:scale-105 transition-transform"
+                  <GSAPAvatar
+                    avatarId={preset.id}
+                    size="lg"
+                    interactive={true}
+                    className="group-hover:scale-105 transition-transform"
                   />
                   {isSelected && (
                     <div

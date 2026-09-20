@@ -24,6 +24,8 @@ import {
   Send,
   Sparkles,
 } from 'lucide-react';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
+import { generateAvatarUrl, getAvatarPresetByUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
 
 export const DashboardPage: React.FC = () => {
   const { user, profile } = useAuth();
@@ -32,8 +34,12 @@ export const DashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [askInput, setAskInput] = useState('');
 
+  const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
+  const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
+  const activePreset = getAvatarPresetByUrl(avatarUrl);
+  const theme = activePreset.theme;
+
   const displayName = profile?.full_name || user?.user_metadata?.full_name || 'Student';
-  const initial = displayName.charAt(0).toUpperCase() || 'S';
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,11 +249,9 @@ export const DashboardPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/app/profile')}
-            className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 bg-white border border-slate-200/80 rounded-2xl hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-2.5 pl-1.5 pr-3 py-1 bg-white border border-slate-200/80 rounded-2xl hover:bg-slate-50 transition-all shadow-xs cursor-pointer"
           >
-            <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-              {initial}
-            </div>
+            <GSAPAvatar avatarId={avatarUrl} size="xs" interactive={false} />
             <span className="text-xs font-semibold text-slate-800">{displayName}</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
@@ -271,16 +275,23 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Mascot Speech Bubble Quote Card */}
-            <div className="dashboard-mascot-quote flex items-center gap-3 p-3.5 sm:px-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-white border border-blue-100/80 rounded-2xl shadow-xs max-w-sm">
-              <div className="w-10 h-10 rounded-2xl bg-blue-100/80 flex items-center justify-center shrink-0 shadow-xs text-xl">
-                🤖
-              </div>
+            <div
+              className="dashboard-mascot-quote flex items-center gap-3 p-3.5 sm:px-4 rounded-2xl shadow-xs max-w-sm border transition-all"
+              style={{
+                background: `linear-gradient(135deg, ${theme.heroGradient ? 'white' : 'white'}, white)`,
+                borderColor: theme.border,
+              }}
+            >
+              <GSAPAvatar avatarId={avatarUrl} size="sm" interactive={true} />
               <div className="text-xs">
                 <p className="text-slate-700 italic font-medium leading-relaxed">
                   "Every question brings you closer to your goals."
                 </p>
-                <span className="text-[10px] font-bold text-indigo-600 block mt-0.5 font-mono">
-                  — MetaMind
+                <span
+                  className="text-[10px] font-bold block mt-0.5 font-mono"
+                  style={{ color: theme.primary }}
+                >
+                  — {theme.themeName}
                 </span>
               </div>
             </div>

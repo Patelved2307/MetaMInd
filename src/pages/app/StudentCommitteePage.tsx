@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/features/auth';
 import { generateAvatarUrl, getAvatarPresetByUrl } from '@/lib/avatarGenerator';
+import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { Button } from '@/components/ui/Button';
 import {
   ConnectSolverModal,
@@ -172,7 +173,7 @@ const TOP_SOLVERS: SolverInfo[] = [
   {
     id: 's-1',
     name: 'Marcus Vance',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+    avatarUrl: 'blue_focus',
     role: 'Algorithms & Data Structures Lead',
     badge: 'Grandmaster Mentor 🎖️',
     solvedCount: 52,
@@ -182,7 +183,7 @@ const TOP_SOLVERS: SolverInfo[] = [
   {
     id: 's-2',
     name: 'Sarah Jenkins',
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+    avatarUrl: 'pink_celebrate',
     role: 'Computer Systems & Web Specialist',
     badge: 'Code Wizard 🧙‍♀️',
     solvedCount: 44,
@@ -192,7 +193,7 @@ const TOP_SOLVERS: SolverInfo[] = [
   {
     id: 's-3',
     name: 'Alex Chen',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
+    avatarUrl: 'teal_beanie',
     role: 'Full Stack & AI Engineer',
     badge: 'Top Contributor 🏆',
     solvedCount: 38,
@@ -1062,10 +1063,10 @@ export const StudentCommitteePage: React.FC = () => {
                     <span className="text-sm font-extrabold text-slate-400 w-4 text-center">
                       {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
                     </span>
-                    <img
-                      src={solver.avatarUrl}
-                      alt={solver.name}
-                      className="w-9 h-9 rounded-xl object-cover border border-slate-200"
+                    <GSAPAvatar
+                      avatarId={solver.avatarUrl}
+                      size="sm"
+                      interactive={false}
                     />
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{solver.name}</h4>
