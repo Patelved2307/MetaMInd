@@ -1,126 +1,30 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
-import {
-  X,
-  Sparkles,
-  ArrowLeft,
-  ExternalLink,
-} from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { GSAPAvatar } from './GSAPAvatar';
 import { getAvatarPresetByUrl, sanitizeAvatarUrl, type AvatarPreset } from '@/lib/avatarGenerator';
-
-export interface TourStepConfig {
-  id: string;
-  targetSelector: string; // DOM selector to point at
-  pageRoute?: string;     // Route where this element exists
-  title: string;
-  badge: string;
-  speechText: string;
-  preferredPosition: 'bottom' | 'top' | 'left' | 'right';
-  actionLabel?: string;
-  onActionClick?: () => void;
-}
-
-const TOUR_STEPS: TourStepConfig[] = [
-  {
-    id: 'dashboard-btn',
-    targetSelector: '#tour-dashboard-btn',
-    pageRoute: '/app/chat',
-    title: 'Your Learning Dashboard',
-    badge: 'Step 1 • Command Center',
-    speechText:
-      "Click here anytime to view your full Dashboard! That's where you track your daily streaks, subject mastery bars, and quick goals.",
-    preferredPosition: 'bottom',
-    actionLabel: 'Go to Dashboard →',
-  },
-  {
-    id: 'chat-prompt',
-    targetSelector: '#tour-chat-prompt',
-    pageRoute: '/app/chat',
-    title: 'AI Neural Workspace',
-    badge: 'Step 2 • Ask Anything',
-    speechText:
-      "Type any conceptual question here or paste lecture notes! I will break down complex ideas step-by-step with analogies and code.",
-    preferredPosition: 'top',
-  },
-  {
-    id: 'study-guide-pdf',
-    targetSelector: '#tour-pdf-btn',
-    pageRoute: '/app/chat',
-    title: 'Instant Study Guide PDFs',
-    badge: 'Step 3 • 1-Click Export',
-    speechText:
-      "Need revision notes? Click this to download a full-length 15-page printable study guide complete with key concepts and practice questions!",
-    preferredPosition: 'bottom',
-  },
-  {
-    id: 'nav-map',
-    targetSelector: '#tour-nav-learning-map',
-    title: 'Interactive Learning Map',
-    badge: 'Step 4 • Visual Roadmap',
-    speechText:
-      "Explore your visual curriculum tree! Each concept node connects with prerequisite branches, so you always know what to master next.",
-    preferredPosition: 'right',
-  },
-  {
-    id: 'nav-practice',
-    targetSelector: '#tour-nav-practice',
-    title: 'Practice & Concept Drills',
-    badge: 'Step 5 • Spaced Repetition',
-    speechText:
-      "Reinforce your knowledge with active recall drills, interactive flashcards, and live coding exercises calibrated to your pace.",
-    preferredPosition: 'right',
-  },
-  {
-    id: 'nav-analysis',
-    targetSelector: '#tour-nav-analysis',
-    title: 'Progress & Retention Analytics',
-    badge: 'Step 6 • Memory Forecasts',
-    speechText:
-      "Track your cognitive retention curves, study heatmaps, and learning velocity to ensure long-term mastery.",
-    preferredPosition: 'right',
-  },
-  {
-    id: 'nav-committee',
-    targetSelector: '#tour-nav-committee',
-    title: 'Student Committee & Bounties',
-    badge: 'Step 7 • Peer Network',
-    speechText:
-      "Post homework doubts with XP bounties, climb the solver leaderboard by answering peers, or jump into live collaborative study rooms!",
-    preferredPosition: 'right',
-  },
-  {
-    id: 'nav-profile',
-    targetSelector: '#tour-nav-profile',
-    title: 'Your 3D Persona & Theme Engine',
-    badge: 'Step 8 • Dynamic Aesthetics',
-    speechText:
-      "That's me! Notice how the whole site glows with matching colors? In Profile, you can customize your animated avatar and transform the theme anytime!",
-    preferredPosition: 'right',
-  },
-];
+import { useTour, TOUR_STEPS } from '@/lib/tourStore';
 
 interface AvatarContextualTourProps {
-  isOpen: boolean;
-  onClose: () => void;
   avatarUrl?: string;
   userName?: string;
 }
 
 export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
-  isOpen,
-  onClose,
   avatarUrl = 'green_yeo',
-  userName = 'Learner',
+  userName = 'Student',
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  const { isOpen, currentStepIndex, currentStep, nextStep, prevStep, goToStep, closeTour } =
+    useTour();
+
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [cardPos, setCardPos] = useState({ top: 120, left: 100 });
+  const [cardPos, setCardPos] = useState({ top: 100, left: 100 });
 
   const avatarContainerRef = useRef<HTMLDivElement>(null);
 
@@ -128,52 +32,47 @@ export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
   const preset: AvatarPreset = getAvatarPresetByUrl(cleanAvatarId);
   const theme = preset.theme;
 
-  const currentStep = TOUR_STEPS[currentStepIndex];
-
-  // Track global mouse position so avatar's eyes follow user cursor anywhere on screen
+  // Real-time GSAP pupil and head tracking to follow the user's cursor
   useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (avatarContainerRef.current) {
-        const rect = avatarContainerRef.current.getBoundingClientRect();
-        const avatarCenterX = rect.left + rect.width / 2;
-        const avatarCenterY = rect.top + rect.height / 2;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!avatarContainerRef.current) return;
+      const rect = avatarContainerRef.current.getBoundingClientRect();
+      const avatarCenterX = rect.left + rect.width / 2;
+      const avatarCenterY = rect.top + rect.height / 2;
 
-        const deltaX = e.clientX - avatarCenterX;
-        const deltaY = e.clientY - avatarCenterY;
-        const dist = Math.hypot(deltaX, deltaY);
+      const deltaX = e.clientX - avatarCenterX;
+      const deltaY = e.clientY - avatarCenterY;
+      const dist = Math.hypot(deltaX, deltaY);
 
-        // Clamp eye shift between -3.5px and +3.5px
-        const maxShift = 3.5;
-        const shiftX = Math.max(-maxShift, Math.min(maxShift, (deltaX / Math.max(dist, 100)) * maxShift));
-        const shiftY = Math.max(-maxShift, Math.min(maxShift, (deltaY / Math.max(dist, 100)) * maxShift));
+      const maxShift = 3;
+      const shiftX = Math.max(-maxShift, Math.min(maxShift, (deltaX / Math.max(dist, 100)) * maxShift));
+      const shiftY = Math.max(-maxShift, Math.min(maxShift, (deltaY / Math.max(dist, 100)) * maxShift));
 
-        const pupils = avatarContainerRef.current.querySelectorAll('g[ref="pupilsRef"], g:has(> circle[fill*="iris"])');
-        pupils.forEach((p) => {
-          gsap.to(p, {
-            x: shiftX,
-            y: shiftY,
-            duration: 0.2,
-            ease: 'power1.out',
-            overwrite: 'auto',
-          });
+      const pupils = avatarContainerRef.current.querySelectorAll('g[ref="pupilsRef"], g:has(> circle[fill*="iris"])');
+      pupils.forEach((p) => {
+        gsap.to(p, {
+          x: shiftX,
+          y: shiftY,
+          duration: 0.2,
+          ease: 'power1.out',
+          overwrite: 'auto',
         });
+      });
 
-        // Subtle head tilt toward mouse cursor
-        const head = avatarContainerRef.current.querySelector('g[ref="headRef"]');
-        if (head) {
-          const rotation = Math.max(-4, Math.min(4, (deltaX / window.innerWidth) * 8));
-          gsap.to(head, {
-            rotation,
-            duration: 0.3,
-            ease: 'power1.out',
-            overwrite: 'auto',
-          });
-        }
+      const head = avatarContainerRef.current.querySelector('g[ref="headRef"]');
+      if (head) {
+        const rotation = Math.max(-3, Math.min(3, (deltaX / window.innerWidth) * 6));
+        gsap.to(head, {
+          rotation,
+          duration: 0.3,
+          ease: 'power1.out',
+          overwrite: 'auto',
+        });
       }
     };
 
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   // Update target element location dynamically
@@ -184,21 +83,32 @@ export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
 
     // Fallback search if selector is slightly different or not yet rendered
     if (!targetEl) {
-      if (currentStep.id === 'dashboard-btn') {
-        targetEl = document.querySelector('button:has(svg.lucide-layout-dashboard), button:has(svg.lucide-compass)');
-      } else if (currentStep.id === 'chat-prompt') {
-        targetEl = document.querySelector('textarea, input[placeholder*="Ask"], input[placeholder*="Search"]');
+      if (currentStep.id === 'dashboard') {
+        targetEl = document.querySelector('#tour-dashboard-streak, #dashboard-streak-count, .dashboard-bento-card');
+      } else if (currentStep.id === 'learn-chat') {
+        targetEl = document.querySelector('#tour-chat-prompt, textarea, input[placeholder*="Ask"]');
+      } else if (currentStep.id === 'practice') {
+        targetEl = document.querySelector('#tour-practice-hero, #tour-nav-practice');
+      } else if (currentStep.id === 'progress') {
+        targetEl = document.querySelector('#tour-learning-map-hero, #tour-nav-learning-map');
+      } else if (currentStep.id === 'badges') {
+        targetEl = document.querySelector('#tour-achievements-hero, #tour-nav-badges');
+      } else if (currentStep.id === 'committee') {
+        targetEl = document.querySelector('#tour-committee-hero, #tour-nav-committee');
+      } else if (currentStep.id === 'exam') {
+        targetEl = document.querySelector('#tour-exam-hero, #tour-nav-exam');
+      } else if (currentStep.id === 'profile') {
+        targetEl = document.querySelector('#tour-profile-hero, #tour-nav-profile');
       }
     }
+
+    const cardWidth = 360;
+    const cardHeight = 220;
+    const margin = 20;
 
     if (targetEl) {
       const rect = targetEl.getBoundingClientRect();
       setTargetRect(rect);
-
-      // Calculate contextual tooltip card position (card width ~340px, height ~200px)
-      const cardWidth = 340;
-      const cardHeight = 220;
-      const margin = 16;
 
       let top = rect.bottom + margin;
       let left = rect.left + rect.width / 2 - cardWidth / 2;
@@ -217,247 +127,225 @@ export const AvatarContextualTour: React.FC<AvatarContextualTourProps> = ({
         top = Math.max(margin, Math.min(window.innerHeight - cardHeight - margin, rect.top + rect.height / 2 - cardHeight / 2));
       }
 
-      // Keep inside screen viewport
+      // Keep strictly within screen viewport boundaries
       top = Math.max(margin, Math.min(window.innerHeight - cardHeight - margin, top));
       left = Math.max(margin, Math.min(window.innerWidth - cardWidth - margin, left));
 
       setCardPos({ top, left });
     } else {
-      // Fallback center position
+      // Graceful centered positioning if target is not on current view
       setTargetRect(null);
       setCardPos({
-        top: Math.max(20, window.innerHeight / 2 - 120),
-        left: Math.max(20, window.innerWidth / 2 - 170),
+        top: Math.max(margin, window.innerHeight / 2 - 110),
+        left: Math.max(margin, window.innerWidth / 2 - 180),
       });
     }
   }, [isOpen, currentStep]);
 
-  // Recalculate on resize, route change, or step change
+  // Recalculate position on resize, scroll, or step change
   useEffect(() => {
     updateTargetPosition();
+
     const handleResize = () => updateTargetPosition();
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleResize, true);
 
-    const timer = setTimeout(updateTargetPosition, 150);
+    const timer1 = setTimeout(updateTargetPosition, 100);
+    const timer2 = setTimeout(updateTargetPosition, 350);
+
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize, true);
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
     };
   }, [updateTargetPosition, currentStepIndex, location.pathname]);
 
-  const handleNext = () => {
-    if (currentStepIndex < TOUR_STEPS.length - 1) {
-      const nextStep = TOUR_STEPS[currentStepIndex + 1];
-      if (nextStep.pageRoute && nextStep.pageRoute !== location.pathname) {
-        navigate(nextStep.pageRoute);
-      }
-      setCurrentStepIndex((prev) => prev + 1);
+  const handleNextClick = () => {
+    if (currentStepIndex === TOUR_STEPS.length - 1) {
+      confetti({
+        particleCount: 65,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+      closeTour();
     } else {
-      handleComplete();
+      nextStep(navigate);
     }
   };
 
-  const handlePrev = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-    }
+  const handlePrevClick = () => {
+    prevStep(navigate);
   };
 
-  const handleComplete = () => {
-    localStorage.setItem('metamind_platform_tour_seen', 'true');
-    confetti({
-      particleCount: 75,
-      spread: 60,
-      origin: { y: 0.7 },
-    });
-    onClose();
-  };
+  const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden select-none">
-      {/* 1. Target Element Highlight Spotlight */}
-      {targetRect && (
-        <motion.div
-          layoutId="tour-spotlight"
-          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-          className="absolute rounded-2xl pointer-events-none transition-all duration-300"
-          style={{
-            top: targetRect.top - 6,
-            left: targetRect.left - 6,
-            width: targetRect.width + 12,
-            height: targetRect.height + 12,
-            border: `2px dashed ${theme.primary}`,
-            boxShadow: `0 0 0 9999px rgba(15, 23, 42, 0.45), 0 0 25px ${theme.glow}`,
-            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          }}
-        />
-      )}
-
-      {/* 2. Dotted Curved Connector Line from Target to Tutorial Box */}
-      {targetRect && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-          <defs>
-            <marker
-              id="tour-arrowhead"
-              viewBox="0 0 10 10"
-              refX="6"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
-            </marker>
-          </defs>
-          <path
-            d={`M ${targetRect.left + targetRect.width / 2} ${
-              cardPos.top > targetRect.bottom ? targetRect.bottom + 6 : targetRect.top - 6
-            } Q ${targetRect.left + targetRect.width / 2} ${
-              (targetRect.top + cardPos.top) / 2
-            } ${cardPos.left + 80} ${cardPos.top}`}
-            fill="none"
-            stroke="#F59E0B"
-            strokeWidth="2.5"
-            strokeDasharray="5,4"
-            markerEnd="url(#tour-arrowhead)"
+      {/* 1. Backdrop Scrim & Target Element Spotlight */}
+      <AnimatePresence>
+        {targetRect ? (
+          <motion.div
+            key={`spotlight-${currentStepIndex}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute rounded-2xl pointer-events-none transition-all duration-300"
+            style={{
+              top: targetRect.top - 6,
+              left: targetRect.left - 6,
+              width: targetRect.width + 12,
+              height: targetRect.height + 12,
+              border: `2px solid ${theme.primary}`,
+              boxShadow: `0 0 0 9999px rgba(15, 23, 42, 0.38), 0 0 20px ${theme.glow}`,
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+            }}
           />
-        </svg>
-      )}
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/35 pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
 
-      {/* 3. The Yellow Rectangle Tutorial Box (Matches User Sketch) with bottom Avatar */}
+      {/* 2. Modern, Clean Tour Card (Matches App Bento Aesthetics) */}
       <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.9, y: 15 }}
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-        className="absolute pointer-events-auto z-20 w-[350px] sm:w-[380px]"
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+        className="absolute pointer-events-auto z-20 w-[350px] sm:w-[370px]"
         style={{
           top: cardPos.top,
           left: cardPos.left,
         }}
       >
-        {/* Main Tutorial Box with warm yellow tint, themes & glass highlights */}
-        <div
-          className="relative rounded-3xl p-5 shadow-2xl transition-all duration-300 backdrop-blur-md overflow-visible"
-          style={{
-            backgroundColor: '#FEF9C3', // Warm yellow container as sketched
-            border: '2.5px solid #F59E0B', // Crisp golden amber border
-            boxShadow: `0 20px 40px -10px rgba(245, 158, 11, 0.35), 0 0 20px ${theme.glow}`,
-          }}
-        >
-          {/* Top Bar inside Tutorial Box */}
-          <div className="flex items-center justify-between pb-2 border-b border-amber-300/80 mb-3">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[11px] font-bold font-mono tracking-wider text-amber-900 uppercase">
-                {currentStep.badge} • {userName}
-              </span>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden relative">
+          {/* Subtle Top Accent Bar using Student's Theme Color */}
+          <div
+            className="h-1 w-full"
+            style={{ backgroundColor: theme.primary }}
+          />
 
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-full">
-                {currentStepIndex + 1} / {TOUR_STEPS.length}
-              </span>
+          <div className="p-5 space-y-4">
+            {/* Header: Avatar, Badge & Step Counter, Close Button */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Live GSAP Vector Avatar */}
+                <div
+                  ref={avatarContainerRef}
+                  className="w-10 h-10 rounded-full border-2 p-0.5 bg-white shadow-xs shrink-0 flex items-center justify-center transition-transform hover:scale-105"
+                  style={{ borderColor: theme.primary }}
+                  title={`${preset.name} - Your AI Companion`}
+                >
+                  <GSAPAvatar
+                    avatarId={cleanAvatarId}
+                    size={34}
+                    interactive={true}
+                    showAura={false}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] font-bold font-mono tracking-wider px-2 py-0.5 rounded-full uppercase"
+                      style={{
+                        backgroundColor: `${theme.primary}15`,
+                        color: theme.primary,
+                      }}
+                    >
+                      {currentStep.badge} • {userName}
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate mt-0.5">
+                    {currentStep.title}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Close Button */}
               <button
                 type="button"
-                onClick={handleComplete}
-                className="text-amber-800 hover:text-amber-950 p-1 hover:bg-amber-200/60 rounded-full transition-colors cursor-pointer"
-                title="Skip Tutorial"
+                onClick={closeTour}
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-xl transition-colors cursor-pointer shrink-0"
+                title="Skip tour"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
 
-          {/* Tutorial Headline & Content */}
-          <div className="space-y-1.5 pr-2">
-            <h3 className="text-base font-extrabold text-amber-950 font-display flex items-center gap-1.5 tracking-tight">
-              <span>{currentStep.title}</span>
-              <Sparkles className="w-4 h-4 text-amber-600" />
-            </h3>
-            <p className="text-xs text-amber-900 leading-relaxed font-sans font-medium">
-              "{currentStep.speechText}"
+            {/* Content: Simple, Clear Plain English */}
+            <p className="text-xs text-slate-600 leading-relaxed font-normal">
+              {currentStep.speechText}
             </p>
-          </div>
 
-          {/* Action or Direct Jump Button if applicable */}
-          {currentStep.actionLabel && (
-            <button
-              type="button"
-              onClick={() => {
-                navigate('/app/dashboard');
-                handleNext();
-              }}
-              className="mt-3 w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
-            >
-              <span>{currentStep.actionLabel}</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Bottom Controls Row: Skip, Back, Next */}
-          <div className="flex items-center justify-between pt-3 mt-3 border-t border-amber-300/80">
-            <button
-              type="button"
-              onClick={handleComplete}
-              className="text-[11px] font-bold text-amber-800/80 hover:text-amber-950 hover:underline transition-all cursor-pointer"
-            >
-              Skip for now
-            </button>
-
-            <div className="flex items-center gap-2">
-              {currentStepIndex > 0 && (
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  className="px-3 py-1.5 rounded-xl border border-amber-400 bg-white/90 hover:bg-white text-amber-950 text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>Back</span>
-                </button>
-              )}
-
+            {/* Footer Navigation Bar */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={handleNext}
-                className="px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-black active:scale-95 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                onClick={closeTour}
+                className="text-xs font-medium text-slate-400 hover:text-slate-700 hover:underline cursor-pointer transition-colors"
               >
-                <span>
-                  {currentStepIndex === TOUR_STEPS.length - 1 ? 'Finish 🚀' : 'Next →'}
-                </span>
+                Skip tour
               </button>
-            </div>
-          </div>
 
-          {/* 4. The Live Generated Avatar Appearing at Bottom of the Tutorial Box */}
-          <div
-            ref={avatarContainerRef}
-            className="absolute -bottom-7 -left-5 flex items-center gap-2 pointer-events-auto group cursor-pointer"
-            title={`${preset.name} is watching your cursor!`}
-          >
-            <div
-              className="p-1 rounded-full bg-white border-2 border-amber-500 shadow-xl transition-transform duration-300 group-hover:scale-110"
-              style={{
-                boxShadow: `0 10px 25px -5px ${theme.primary}`,
-              }}
-            >
-              <GSAPAvatar
-                avatarId={cleanAvatarId}
-                size={54}
-                interactive={true}
-                showAura={true}
-              />
-            </div>
+              {/* Progress indicator dots */}
+              <div className="flex items-center gap-1">
+                {TOUR_STEPS.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => goToStep(idx, navigate)}
+                    aria-label={`Go to step ${idx + 1}`}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      idx === currentStepIndex
+                        ? 'w-4'
+                        : 'w-1.5 bg-slate-200 hover:bg-slate-300'
+                    }`}
+                    style={
+                      idx === currentStepIndex
+                        ? { backgroundColor: theme.primary }
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
 
-            {/* Little Thought Pill from Avatar */}
-            <div className="bg-white/95 px-2.5 py-1 rounded-full border border-amber-300 shadow-md text-[10px] font-bold text-slate-800 whitespace-nowrap flex items-center gap-1 animate-bounce">
-              <span>👀</span>
-              <span>I follow your cursor!</span>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-1.5">
+                {currentStepIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrevClick}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    <span>Back</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleNextClick}
+                  className="px-3.5 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+                  style={{ backgroundColor: theme.primary }}
+                >
+                  <span>{isLastStep ? 'Got it!' : 'Next'}</span>
+                  {isLastStep ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

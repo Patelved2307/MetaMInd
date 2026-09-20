@@ -343,7 +343,7 @@ export const AchievementsPage: React.FC = () => {
       />
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 relative z-10">
+      <div id="tour-achievements-hero" className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold font-mono flex items-center gap-1.5">

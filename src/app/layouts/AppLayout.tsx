@@ -8,15 +8,27 @@ import { GSAPAvatar } from '@/components/ui/GSAPAvatar';
 import { AvatarContextualTour } from '@/components/ui/AvatarContextualTour';
 import { useAuth } from '@/features/auth';
 import { getAvatarPresetByUrl, generateAvatarUrl, sanitizeAvatarUrl } from '@/lib/avatarGenerator';
+import { useTour } from '@/lib/tourStore';
 
 export const AppLayout: React.FC = () => {
   const { profile, user } = useAuth();
   const location = useLocation();
+  const { startTour } = useTour();
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-  const [isTourOpen, setIsTourOpen] = useState(false);
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
+
+  // Auto-launch guide tour for new students on registration if never seen
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen');
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        startTour(0);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [startTour]);
 
   const rawAvatarUrl = profile?.avatar_url || generateAvatarUrl(user?.id || 'demo');
   const avatarUrl = sanitizeAvatarUrl(rawAvatarUrl);
@@ -112,7 +124,7 @@ export const AppLayout: React.FC = () => {
       <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2.5">
         <button
           type="button"
-          onClick={() => setIsTourOpen(true)}
+          onClick={() => startTour(0)}
           className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 shadow-xl flex items-center gap-2 font-sans text-xs cursor-pointer transition-all hover:scale-105 active:scale-95 group select-none"
           title="Interactive Platform Guide"
         >
@@ -143,8 +155,6 @@ export const AppLayout: React.FC = () => {
 
       {/* Platform In-Situ Contextual Avatar Tour */}
       <AvatarContextualTour
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
         avatarUrl={avatarUrl}
         userName={profile?.full_name || user?.user_metadata?.full_name || 'Learner'}
       />

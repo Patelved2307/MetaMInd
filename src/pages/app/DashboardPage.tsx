@@ -523,7 +523,7 @@ export const DashboardPage: React.FC = () => {
         {/* RIGHT SIDEBAR WIDGETS COLUMN (4 Cols) */}
         <div className="lg:col-span-4 space-y-5">
           {/* LEARNING STREAK CARD */}
-          <div className="dashboard-bento-card p-5 bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/70 rounded-3xl shadow-xs flex items-center justify-between">
+          <div id="tour-dashboard-streak" className="dashboard-bento-card p-5 bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/70 rounded-3xl shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-3.5">
               <div className="streak-flame-icon w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-xs select-none">
                 🔥

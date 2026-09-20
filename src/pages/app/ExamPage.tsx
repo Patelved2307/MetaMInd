@@ -236,7 +236,7 @@ export const ExamPage: React.FC = () => {
 
       {!examStarted ? (
         /* STEP 1: EXAM SETUP & DIFFICULTY SELECTION */
-        <div className="rounded-3xl p-6 sm:p-10 bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-md space-y-8 relative z-10">
+        <div id="tour-exam-hero" className="rounded-3xl p-6 sm:p-10 bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-md space-y-8 relative z-10">
           <div className="space-y-3 text-center max-w-xl mx-auto">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-sm text-white"

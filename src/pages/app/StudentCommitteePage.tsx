@@ -536,7 +536,7 @@ export const StudentCommitteePage: React.FC = () => {
       </div>
 
       {/* 3. Search & Topic Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
+      <div id="tour-committee-hero" className="flex flex-col sm:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input

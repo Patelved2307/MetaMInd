@@ -20,6 +20,7 @@ import { FilePreviewModal } from '@/components/chat/FilePreviewModal';
 import { PluginMarketplaceModal } from '@/components/chat/PluginMarketplaceModal';
 import { ShareChatModal } from '@/components/chat/ShareChatModal';
 import { AvatarContextualTour } from '@/components/ui/AvatarContextualTour';
+import { useTour } from '@/lib/tourStore';
 import {
   Search,
   LayoutDashboard,
@@ -294,18 +295,18 @@ export const ChatbotWorkspacePage: React.FC = () => {
   const [isPluginStoreOpen, setIsPluginStoreOpen] = useState(false);
   const [sharingSession, setSharingSession] = useState<ChatSession | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isTourOpen, setIsTourOpen] = useState(false);
+  const { startTour } = useTour();
 
   // Auto-launch avatar guide tutorial for new students on registration
   useEffect(() => {
     const hasSeenTour = localStorage.getItem('metamind_platform_tour_seen');
     if (!hasSeenTour) {
       const timer = setTimeout(() => {
-        setIsTourOpen(true);
+        startTour(1);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [startTour]);
   const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null);
 
   // History 3-dots Menu & Inline Rename State
@@ -976,8 +977,6 @@ export const ChatbotWorkspacePage: React.FC = () => {
       />
 
       <AvatarContextualTour
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
         avatarUrl={avatarUrl}
         userName={registeredName}
       />
@@ -1260,7 +1259,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setIsTourOpen(true)}
+              onClick={() => startTour(1)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100/90 border border-indigo-200/90 rounded-xl transition-all cursor-pointer shadow-2xs group"
               title="Platform Interactive Guide"
             >

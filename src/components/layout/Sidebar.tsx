@@ -135,14 +135,20 @@ export const Sidebar: React.FC = () => {
                   id={
                     item.path.includes('dashboard')
                       ? 'tour-nav-dashboard'
-                      : item.path.includes('learning-map')
-                      ? 'tour-nav-learning-map'
+                      : item.path.includes('chat')
+                      ? 'tour-nav-learn'
                       : item.path.includes('practice')
                       ? 'tour-nav-practice'
-                      : item.path.includes('analysis')
-                      ? 'tour-nav-analysis'
+                      : item.path.includes('learning-map')
+                      ? 'tour-nav-learning-map'
+                      : item.path.includes('achievements')
+                      ? 'tour-nav-badges'
                       : item.path.includes('committee')
                       ? 'tour-nav-committee'
+                      : item.path.includes('exam')
+                      ? 'tour-nav-exam'
+                      : item.path.includes('profile')
+                      ? 'tour-nav-profile'
                       : undefined
                   }
                   onClick={() => setIsOpen(false)}
