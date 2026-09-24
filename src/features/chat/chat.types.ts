@@ -81,6 +81,7 @@ export interface CognitiveDiagnostic {
   quickCheck: QuickCheckQuestion[];
   topic: string;
   subject?: string;
+  isExplanation?: boolean;
   scenario?: PredictedScenario;
   followUpPrompts?: string[];
   activePluginData?: {

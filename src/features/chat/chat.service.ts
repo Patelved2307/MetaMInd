@@ -4,6 +4,7 @@ import type {
   ChatPlugin,
   CognitiveDiagnostic,
   ChatAttachment,
+  QuickCheckQuestion,
 } from './chat.types';
 import { ACADEMIC_DATASET, type TopicKnowledgeItem } from './academicDataset';
 import {
@@ -219,7 +220,7 @@ export const chatService = {
     // Default seed session
     const initialSession: ChatSession = {
       id: 'session_default_welcome',
-      title: 'SQL Joins & Relational Logic',
+      title: 'Welcome to MetaMind AI',
       pluginId: 'concept-explainer',
       createdAt: new Date(Date.now() - 3600000).toISOString(),
       updatedAt: new Date().toISOString(),
@@ -469,6 +470,109 @@ export const chatService = {
   },
 
   /**
+   * Async AI response generation that queries local Llama 3.1 server (port 3001)
+   * with automatic fallback to static rule-based system if offline.
+   */
+  async generateCognitiveResponseAsync(
+    userPrompt: string,
+    pluginId: PluginId = 'concept-explainer',
+    activePluginIds: PluginId[] = [],
+    attachments: ChatAttachment[] = []
+  ): Promise<{
+    content: string;
+    diagnostic?: CognitiveDiagnostic;
+  }> {
+    const trimmed = userPrompt.trim();
+    const lower = trimmed.toLowerCase();
+    const clean = lower.replace(/[^\w\s]/gi, ' ').replace(/\s+/g, ' ').trim();
+
+    // 1. Let greetings / doubt announcements / smalltalk / quiz requests handle via conversational router
+    const isGreeting =
+      /^(hi|hello|hey|yo|sup|greetings|howdy|hola|namaste|good\s*(morning|afternoon|evening|day)|hi\s*there|hello\s*there)$/i.test(
+        clean
+      ) || clean === 'hello' || clean === 'hi' || clean === 'hey';
+
+    const isDoubtIntent =
+      /^(i\s*have\s*(a\s*|an\s*|some\s*|one\s*)?(doubt|question|problem|query|issue|doubts|questions)|can\s*i\s*ask\s*(a\s*|an\s*)?(doubt|question)|have\s*(a\s*|an\s*)?doubt|got\s*(a\s*|an\s*)?doubt|i\s*need\s*help|help\s*me|solve\s*my\s*doubt|doubt|doubts)$/i.test(
+        clean
+      );
+
+    const isSmalltalk =
+      /^(who\s*are\s*you|what\s*can\s*you\s*do|what\s*is\s*metamind|help|how\s*does\s*this\s*work|how\s*to\s*use)$/i.test(
+        clean
+      );
+
+    if (isGreeting || isDoubtIntent || isSmalltalk || clean.length <= 6) {
+      return this.generateCognitiveResponse(userPrompt, pluginId, activePluginIds, attachments);
+    }
+
+    // 2. Query Local Llama 3.1 Inference Bridge
+    try {
+      const res = await fetch('http://localhost:3001/api/ai/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: userPrompt }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const subject = data.subject || 'Computer Science & STEM';
+        const topic = data.topic || userPrompt;
+        const prerequisite = data.prerequisite || 'Foundational Principles';
+
+        const quickCheck: QuickCheckQuestion[] = (data.questions || []).map((q: any, idx: number) => {
+          const options: string[] = q.options || [];
+          let correctIndex = options.findIndex((opt) => opt.trim() === (q.correctAnswer || '').trim());
+          if (correctIndex === -1) correctIndex = 0;
+
+          return {
+            id: q.id || `q_llama_${Date.now()}_${idx}`,
+            question: q.question,
+            options,
+            correctIndex,
+            explanation: q.explanation || 'Verified with local Llama 3.1 diagnostic probe.',
+          };
+        });
+
+        const keyTakeaways: string[] = Array.isArray(data.keyTakeaways) && data.keyTakeaways.length > 0
+          ? data.keyTakeaways
+          : [
+            `Core Concept: ${topic}`,
+            `Prerequisite Foundation: ${prerequisite}`,
+            `Verify mental models against boundary conditions and system execution flow.`,
+          ];
+
+        const diagnostic: CognitiveDiagnostic = {
+          topic,
+          subject,
+          doubtSummary: `In-depth cognitive breakdown of **${topic}** with verified prerequisite anchor **${prerequisite}**.`,
+          weakness: `Prerequisite Gap: ${prerequisite}`,
+          strength: `Target Concept: ${topic}`,
+          confidenceScore: 75,
+          confidenceLevel: 'Moderate',
+          keyTakeaways,
+          quickCheck,
+        };
+
+        const detailedExplanation = data.detailedExplanation || `### 🎯 Comprehensive Pedagogical Breakdown: ${topic}\n\nTo master **${topic}**, you must first anchor your understanding in **${prerequisite}**.\n\n${userPrompt}`;
+
+        const content = `${detailedExplanation}
+
+---
+
+> 💡 **Cognitive Check**: Test your understanding with the diagnostic verification questions and select your confidence level below to calibrate your mastery profile!`;
+
+        return { content, diagnostic };
+      }
+    } catch (err) {
+      console.warn('Local Llama bridge call failed, using rule-based fallback:', err);
+    }
+
+    // 3. Fallback to existing rule-based engine
+    return this.generateCognitiveResponse(userPrompt, pluginId, activePluginIds, attachments);
+  },
+
+  /**
    * Main AI response generation with Question Scenario Prediction,
    * Attached Document Integration, and Applied Plugins
    */
@@ -501,13 +605,14 @@ export const chatService = {
       };
     }
 
-    // 2. DOUBT INTENT / READINESS (e.g. "i have doubt", "i have a doubt", "can you help me with a doubt")
+    // 2. DOUBT INTENT / READINESS (e.g. "i have doubt", "i have an doubt", "i have a question")
     const isDoubtIntent =
-      /^(i\s*have\s*(a\s*|some\s*)?(doubt|question|problem|query|issue|doubts|questions)|can\s*i\s*ask\s*(a\s*)?(doubt|question)|have\s*(a\s*)?doubt|got\s*(a\s*)?doubt|i\s*need\s*help(\s*with\s*(a\s*)?(doubt|question|my\s*doubt))?|need\s*help(\s*with\s*(a\s*)?(doubt|question))?|help\s*me(\s*with\s*(a\s*)?(doubt|question|my\s*doubt))?|can\s*you\s*help\s*me(\s*with\s*(a\s*)?(doubt|question|my\s*doubt))?|im\s*stuck|i\s*am\s*stuck|im\s*confused|i\s*am\s*confused|can\s*you\s*help\s*me|solve\s*my\s*doubt|doubt|doubts)$/i.test(
+      /^(i\s*have\s*(a\s*|an\s*|some\s*|one\s*)?(doubt|question|problem|query|issue|doubts|questions)|can\s*i\s*ask\s*(a\s*|an\s*)?(doubt|question)|have\s*(a\s*|an\s*)?doubt|got\s*(a\s*|an\s*)?doubt|i\s*need\s*help(\s*with\s*(a\s*|an\s*)?(doubt|question|my\s*doubt))?|need\s*help(\s*with\s*(a\s*|an\s*)?(doubt|question))?|help\s*me(\s*with\s*(a\s*|an\s*)?(doubt|question|my\s*doubt))?|can\s*you\s*help\s*me(\s*with\s*(a\s*|an\s*)?(doubt|question|my\s*doubt))?|im\s*stuck|i\s*am\s*stuck|im\s*confused|i\s*am\s*confused|can\s*you\s*help\s*me|solve\s*my\s*doubt|doubt|doubts)$/i.test(
         clean
       ) ||
       clean === 'i have doubt' ||
       clean === 'i have a doubt' ||
+      clean === 'i have an doubt' ||
       clean === 'i have doubts' ||
       clean === 'doubt' ||
       clean === 'doubts' ||

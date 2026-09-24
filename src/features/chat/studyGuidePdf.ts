@@ -12,11 +12,52 @@ const escapeHtml = (str: string): string => {
     .replace(/'/g, '&#039;');
 };
 
+// Helper to convert markdown to rich HTML for print
+function formatMarkdownToHtml(md: string): string {
+  if (!md) return '';
+  let text = md;
+
+  // Convert code blocks with syntax styling
+  text = text.replace(/```([\w-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    return `<div class="code-terminal"><div class="terminal-topbar"><div class="terminal-dots"><div class="dot-red"></div><div class="dot-yellow"></div><div class="dot-green"></div></div><span class="terminal-title">${escapeHtml(lang || 'code')}</span></div><pre class="code-content"><code>${escapeHtml(code.trim())}</code></pre></div>`;
+  });
+
+  // Convert blockquotes
+  text = text.replace(/^>\s*(.*?)$/gm, '<div class="diag-box diag-weakness" style="margin: 12px 0; background: #EEF2FF; border-color: #C7D2FE; color: #1E1B4B;">$1</div>');
+
+  // Convert headers
+  text = text.replace(/^##\s+(.*?)$/gm, '<h2 style="font-size: 17px; font-weight: 800; color: #1E1B4B; margin: 24px 0 10px 0; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">$1</h2>');
+  text = text.replace(/^###\s+(.*?)$/gm, '<h3 style="font-size: 15px; font-weight: 800; color: #1E1B4B; margin: 20px 0 8px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;">$1</h3>');
+  text = text.replace(/^####\s+(.*?)$/gm, '<h4 style="font-size: 13.5px; font-weight: 700; color: #353B97; margin: 16px 0 6px 0;">$1</h4>');
+
+  // Convert bold and inline code
+  text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/`([^`]+)`/g, '<code style="background: #EEF2FF; color: #353B97; padding: 2px 6px; border-radius: 4px; font-family: \'JetBrains Mono\', monospace; font-size: 12px;">$1</code>');
+
+  // Convert horizontal rules
+  text = text.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid #E2E8F0; margin: 20px 0;" />');
+
+  // Convert bullets
+  text = text.replace(/^[•*-]\s+(.*?)$/gm, '<li style="margin-left: 18px; margin-bottom: 5px; color: #334155;">$1</li>');
+
+  // Convert paragraphs
+  const chunks = text.split(/\n\s*\n/);
+  return chunks.map(chunk => {
+    const t = chunk.trim();
+    if (!t) return '';
+    if (t.startsWith('<div') || t.startsWith('<h2') || t.startsWith('<h3') || t.startsWith('<h4') || t.startsWith('<hr')) return t;
+    if (t.startsWith('<li')) return `<ul style="margin: 8px 0 14px 0; list-style-type: disc;">${t}</ul>`;
+    return `<p style="margin-bottom: 12px; line-height: 1.7; color: #334155;">${t.replace(/\n/g, '<br/>')}</p>`;
+  }).join('');
+}
+
 export const generateStudyGuidePdfHtml = (
   topic: string,
   diagnostic?: CognitiveDiagnostic,
   userName: string = 'Scholar',
-  chapterData?: ChapterContent
+  chapterData?: ChapterContent,
+  realExplanation?: string
 ): string => {
   const dateFormatted = new Date().toLocaleDateString('en-US', {
     month: 'long',
@@ -26,38 +67,24 @@ export const generateStudyGuidePdfHtml = (
 
   const serialId = `MTM-GUIDE-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  // Resolve matching chapter if not provided directly
-  let resolvedChapter: ChapterContent | undefined = chapterData;
-  if (!resolvedChapter) {
-    const topicLower = topic.toLowerCase();
-    if (topicLower.includes('relational') || topicLower.includes('schema') || topicLower.includes('codd') || topicLower.includes('dbms') || topicLower.includes('db-1')) {
-      resolvedChapter = CHAPTER_CONTENT_REGISTRY['db-1'];
-    } else if (topicLower.includes('key') || topicLower.includes('primary') || topicLower.includes('foreign') || topicLower.includes('db-2')) {
-      resolvedChapter = CHAPTER_CONTENT_REGISTRY['db-2'];
-    } else if (topicLower.includes('normal') || topicLower.includes('1nf') || topicLower.includes('2nf') || topicLower.includes('3nf') || topicLower.includes('db-3')) {
-      resolvedChapter = CHAPTER_CONTENT_REGISTRY['db-3'];
-    } else if (topicLower.includes('sql') || topicLower.includes('query') || topicLower.includes('select') || topicLower.includes('join') || topicLower.includes('db-4')) {
-      resolvedChapter = CHAPTER_CONTENT_REGISTRY['db-4'];
-    } else {
-      // Generate structured chapter content for the topic
-      resolvedChapter = getChapterContent('cs', 'custom-1', topic);
-    }
-  }
+  const isRealExplanation = Boolean(realExplanation && realExplanation.trim().length > 0);
+  const resolvedTopic = diagnostic?.topic || (topic !== 'Academic Topic' && topic !== 'Welcome to MetaMind AI' && topic !== 'SQL Joins & Relational Logic' ? topic : 'Academic Inquiry');
 
-  // Diagnostic fallback if called directly from Chapter view without chatbot diagnostic
-  const resolvedDiag: CognitiveDiagnostic = diagnostic || {
+  // Only use chapterData if explicitly provided (e.g. from the chapter reader)
+  const resolvedChapter: ChapterContent | undefined = chapterData;
+
+  // Diagnostic fallback
+  const resolvedDiag: CognitiveDiagnostic = diagnostic || (resolvedChapter ? {
     doubtSummary: `Mastery and systematic breakdown of ${resolvedChapter.title}`,
     topic: resolvedChapter.title,
-    strength: `Demonstrates solid grasp of foundational concepts in ${resolvedChapter.title} and systematic logical formulation.`,
-    weakness: `Occasionally conflates theoretical constraints with physical engine implementation details under edge-case queries.`,
+    strength: `Demonstrates solid grasp of foundational concepts in ${resolvedChapter.title}.`,
+    weakness: `Occasionally conflates theoretical constraints with physical engine implementation details.`,
     confidenceScore: 88,
     confidenceLevel: 'High',
     keyTakeaways: [
-      `Master the distinction between logical schema blueprints (intension) and dynamic runtime instances (extension).`,
-      `Every primary key strictly requires entity integrity (non-null, unique atomic values).`,
-      `Referential integrity constraints enforce domain consistency across relational foreign-key references.`,
-      `Relational algebra operators adhere to mathematical closure: every operation inputs relations and outputs a relation.`,
-      `Optimize queries by pushing down selections and projections before computing relational Cartesian joins.`
+      `Master core principles before complex applications.`,
+      `Verify computational complexity and memory boundaries.`,
+      `Review diagnostic question rationales to eliminate recurring misconceptions.`
     ],
     quickCheck: resolvedChapter.questions.map((q, idx) => ({
       id: q.id || `qc-${idx + 1}`,
@@ -66,7 +93,16 @@ export const generateStudyGuidePdfHtml = (
       correctIndex: q.options.indexOf(q.correctAnswer) >= 0 ? q.options.indexOf(q.correctAnswer) : 0,
       explanation: q.explanation
     }))
-  };
+  } : {
+    doubtSummary: `Cognitive mastery of ${resolvedTopic}`,
+    topic: resolvedTopic,
+    strength: `Solid foundational comprehension of ${resolvedTopic}`,
+    weakness: `Prerequisite conceptual clarification`,
+    confidenceScore: 85,
+    confidenceLevel: 'High',
+    keyTakeaways: [`Master core prerequisite principles for ${resolvedTopic}`],
+    quickCheck: []
+  });
 
   const confidenceScore = resolvedDiag.confidenceScore ?? 85;
   const confidenceLevel = resolvedDiag.confidenceLevel || 'High';
@@ -859,9 +895,11 @@ export const generateStudyGuidePdfHtml = (
         </div>
       </div>
 
-      <div class="doc-headline">${escapeHtml(resolvedChapter.title)}</div>
+      <div class="doc-headline">${escapeHtml(resolvedTopic)}</div>
       <div class="doc-subtitle">
-        Course: ${escapeHtml(resolvedChapter.courseTitle)} • Chapter ${escapeHtml(resolvedChapter.chapterNumber)} • Comprehensive Pedagogical Analysis & Practice Battery
+        ${isRealExplanation
+          ? `Personalized Cognitive Study Guide • Synthesized for ${escapeHtml(userName)} • Calibrated Neural Architecture`
+          : `Official Academic Study Guide • Synthesized for ${escapeHtml(userName)} • MetaMind AI System`}
       </div>
     </header>
 
@@ -876,8 +914,8 @@ export const generateStudyGuidePdfHtml = (
         <span>${escapeHtml(dateFormatted)}</span>
       </div>
       <div class="meta-item">
-        <label>Syllabus Level</label>
-        <span>${escapeHtml(resolvedChapter.difficulty)} (${escapeHtml(resolvedChapter.readingTime)})</span>
+        <label>Calibration Level</label>
+        <span>${escapeHtml(confidenceLevel)} Tier (${confidenceScore}%)</span>
       </div>
       <div class="meta-item">
         <label>Document ID</label>
@@ -889,7 +927,7 @@ export const generateStudyGuidePdfHtml = (
     <div class="guide-content">
 
       <!-- ========================================================================= -->
-      <!-- MODULE 1: COGNITIVE DIAGNOSTIC & PERSONAL LEARNING PATHOLOGY -->
+      <!-- MODULE 1: COGNITIVE DIAGNOSTIC & MASTERY PROFILE -->
       <!-- ========================================================================= -->
       <section class="module-section">
         <div class="section-banner">
@@ -901,7 +939,7 @@ export const generateStudyGuidePdfHtml = (
         </div>
 
         <p class="lead-paragraph">
-          This study guide is dynamically synthesized by MetaMind's adaptive cognitive engine. It analyzes your inquiry patterns, isolates foundational misconceptions, and maps an accelerated trajectory toward academic mastery.
+          This study guide is dynamically synthesized by MetaMind's adaptive cognitive engine based on your academic inquiry on <strong>${escapeHtml(resolvedTopic)}</strong>. It analyzes your inquiry patterns, isolates foundational misconceptions, and maps an accelerated trajectory toward complete academic mastery.
         </p>
 
         <div class="diagnostic-panel">
@@ -929,432 +967,98 @@ export const generateStudyGuidePdfHtml = (
               <span><strong>${confidenceScore}%</strong> (${confidenceLevel} Tier)</span>
             </div>
             <div class="meter-track">
-              <div class="meter-fill"></div>
+              <div class="meter-fill" style="width: ${confidenceScore}%;"></div>
             </div>
           </div>
         </div>
       </section>
 
       <!-- ========================================================================= -->
-      <!-- MODULE 2: HISTORICAL GENESIS & ARCHITECTURAL MOTIVATION -->
+      <!-- MODULE 2: IN-DEPTH PEDAGOGICAL BREAKDOWN & CONNECTED ARCHITECTURE -->
       <!-- ========================================================================= -->
       <section class="module-section">
         <div class="section-banner">
           <div class="section-title">
             <span class="section-num">M-02</span>
-            <span>Historical Genesis & The Core Problem</span>
+            <span>In-Depth Pedagogical Breakdown & Connected Conceptual Architecture</span>
           </div>
-          <span class="section-badge">Theoretical Roots</span>
+          <span class="section-badge">Calibrated Neural Explanation</span>
         </div>
 
-        <p><strong>The Pre-Existing Dilemma:</strong></p>
-        <p>${escapeHtml(resolvedChapter.historyOrBackground)}</p>
-
-        <p><strong>Executive Architectural Overview:</strong></p>
-        <p class="lead-paragraph">${escapeHtml(resolvedChapter.overview)}</p>
-
-        <p>
-          <strong>Why This Concept is Critical in Modern Systems:</strong> Modern large-scale distributed architectures (such as PostgreSQL, CockroachDB, BigQuery, and enterprise storage engines) demand absolute data consistency, deterministic time complexity, and formal guarantees against data corruption. Without formal relational schemas and integrity invariants, systems suffer from unbounded anomalies, redundant disk amplification, and catastrophic race conditions.
-        </p>
+        <div class="explanation-body">
+          ${isRealExplanation
+            ? formatMarkdownToHtml(realExplanation!)
+            : `<div class="concept-card">
+                 <div class="concept-title"><span class="marker">§1.</span> <span>Inquiry Focus: ${escapeHtml(resolvedTopic)}</span></div>
+                 <p class="lead-paragraph">${escapeHtml(resolvedDiag.doubtSummary)}</p>
+                 <p><strong>Verified Foundational Anchor:</strong> ${escapeHtml(resolvedDiag.strength)}</p>
+                 <p><strong>Identified Gap:</strong> ${escapeHtml(resolvedDiag.weakness)}</p>
+               </div>`
+          }
+        </div>
       </section>
 
       <!-- ========================================================================= -->
-      <!-- MODULE 3: ROSETTA STONE TERMINOLOGY COMPARISON MATRIX -->
+      <!-- MODULE 3: ACTIVE RECALL PRACTICE & DIAGNOSTIC VERIFICATION -->
       <!-- ========================================================================= -->
+      ${resolvedDiag.quickCheck && resolvedDiag.quickCheck.length > 0 ? `
       <section class="module-section page-break">
         <div class="section-banner">
           <div class="section-title">
             <span class="section-num">M-03</span>
-            <span>The Rosetta Stone: Formal vs Applied Terminology</span>
-          </div>
-          <span class="section-badge">Foundations</span>
-        </div>
-
-        <p>
-          Students frequently struggle when transitioning between abstract mathematical papers (relational algebra, predicate calculus) and concrete production SQL databases. The table below establishes an exact 1-to-1 translation between mathematical formalism, practical database engineering, and intuitive everyday mental models.
-        </p>
-
-        <table class="academic-table">
-          <thead>
-            <tr>
-              <th style="width: 22%;">Formal / Mathematical</th>
-              <th style="width: 22%;">DBMS / Engineering</th>
-              <th style="width: 24%;">Everyday Mental Model</th>
-              <th style="width: 32%;">Precise Technical Definition & Invariant</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${resolvedChapter.keyTerms
-              .map(
-                (term) => `
-              <tr>
-                <td class="term-math">${escapeHtml(term.mathTerm)}</td>
-                <td class="term-dbms">${escapeHtml(term.dbmsTerm)}</td>
-                <td class="term-plain">${escapeHtml(term.everydayTerm)}</td>
-                <td>${escapeHtml(term.description)}</td>
-              </tr>
-            `
-              )
-              .join('')}
-          </tbody>
-        </table>
-      </section>
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 4: CORE ARCHITECTURAL CONCEPTS & DEEP PROOFS -->
-      <!-- ========================================================================= -->
-      <section class="module-section">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-04</span>
-            <span>Core Theoretical Concepts & Architectural Invariants</span>
-          </div>
-          <span class="section-badge">Deep Theory</span>
-        </div>
-
-        ${resolvedChapter.coreConcepts
-          .map(
-            (concept, idx) => `
-          <div class="concept-card">
-            <div class="concept-title">
-              <span class="marker">§${idx + 1}.</span>
-              <span>${escapeHtml(concept.heading)}</span>
-            </div>
-            <p>${escapeHtml(concept.content)}</p>
-            ${
-              concept.points && concept.points.length > 0
-                ? `
-              <ul class="concept-points">
-                ${concept.points
-                  .map(
-                    (pt) => `
-                  <li class="concept-point">${escapeHtml(pt)}</li>
-                `
-                  )
-                  .join('')}
-              </ul>
-            `
-                : ''
-            }
-          </div>
-        `
-          )
-          .join('')}
-      </section>
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 5: SCHEMAS, BLUEPRINTS & STORAGE ANATOMY -->
-      <!-- ========================================================================= -->
-      ${
-        resolvedChapter.schemaDiagram
-          ? `
-      <section class="module-section page-break">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-05</span>
-            <span>Physical Schema Anatomy & Tabular Blueprint</span>
-          </div>
-          <span class="section-badge">Schema Design</span>
-        </div>
-
-        <p>
-          Below is the verified schema layout for relation <strong>${escapeHtml(resolvedChapter.schemaDiagram.tableName)}</strong>, highlighting column data domains, atomic constraints, and tuple instances.
-        </p>
-
-        <table class="academic-table">
-          <thead>
-            <tr>
-              ${resolvedChapter.schemaDiagram.columns
-                .map(
-                  (col) => `
-                <th>
-                  ${escapeHtml(col.name)}
-                  <div style="font-size: 9px; opacity: 0.8; font-weight: normal;">${escapeHtml(col.type)} ${col.isKey ? '• [PK]' : ''}</div>
-                </th>
-              `
-                )
-                .join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${resolvedChapter.schemaDiagram.rows
-              .map(
-                (row) => `
-              <tr>
-                ${row
-                  .map(
-                    (val, cellIdx) => `
-                  <td ${resolvedChapter?.schemaDiagram?.columns[cellIdx]?.isKey ? 'style="font-weight: 700; color: #353B97;"' : ''}>
-                    ${escapeHtml(String(val))}
-                  </td>
-                `
-                  )
-                  .join('')}
-              </tr>
-            `
-              )
-              .join('')}
-          </tbody>
-        </table>
-
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-top: 14px; font-size: 12px;">
-          <strong>Schema Invariant Verification:</strong>
-          <ul style="margin-left: 20px; margin-top: 6px; color: #475569;">
-            <li><strong>Degree (Arity):</strong> ${resolvedChapter.schemaDiagram.columns.length} columns defined in relation schema R.</li>
-            <li><strong>Cardinality:</strong> ${resolvedChapter.schemaDiagram.rows.length} valid tuples currently populated in relation instance r(R).</li>
-            <li><strong>Atomic Domain Invariant:</strong> Every cell satisfies First Normal Form (1NF) with indivisible atomic values.</li>
-          </ul>
-        </div>
-      </section>
-      `
-          : ''
-      }
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 6: IMPLEMENTATION SANDBOX & EXECUTION TELEMETRY -->
-      <!-- ========================================================================= -->
-      <section class="module-section page-break">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-06</span>
-            <span>Production Code Sandbox & Execution Mechanics</span>
-          </div>
-          <span class="section-badge">Implementation</span>
-        </div>
-
-        <p><strong>Code Lab: ${escapeHtml(resolvedChapter.codeExample.title)}</strong></p>
-        <p>${escapeHtml(resolvedChapter.codeExample.explanation)}</p>
-
-        <div class="code-terminal">
-          <div class="terminal-topbar">
-            <div class="terminal-dots">
-              <div class="dot-red"></div>
-              <div class="dot-yellow"></div>
-              <div class="dot-green"></div>
-            </div>
-            <div class="terminal-title">${escapeHtml(resolvedChapter.codeExample.language.toUpperCase())} Sandbox • Production Pipeline</div>
-            <div style="font-size: 10px; color: #64748B;">UTF-8</div>
-          </div>
-
-          <pre class="code-content"><code>${escapeHtml(resolvedChapter.codeExample.code)}</code></pre>
-
-          <div class="code-output">
-            <div style="color: #94A3B8; font-size: 10px; margin-bottom: 4px;">// Execution Engine Output Telemetry:</div>
-            ${escapeHtml(resolvedChapter.codeExample.outputPreview)}
-          </div>
-        </div>
-
-        <p style="font-size: 12px; color: #475569; margin-top: 8px;">
-          <strong>Step-by-Step Query Plan Mechanics:</strong> When the query executes, the engine parses the SQL string into an Abstract Syntax Tree (AST), passes it to the Cost-Based Query Optimizer to choose between index seek and full table scan, accesses the memory buffer pool, and evaluates filter predicates in $O(1)$ or $O(\log N)$ before materializing the projected tuple stream.
-        </p>
-      </section>
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 7: THE GOLDEN INVARIANTS & INTEGRITY CONSTRAINTS -->
-      <!-- ========================================================================= -->
-      <section class="module-section">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-07</span>
-            <span>Golden Rules & System Integrity Constraints</span>
-          </div>
-          <span class="section-badge">Guarantees</span>
-        </div>
-
-        <p>
-          High-reliability engineering requires strict adherence to system invariants. Violating these constraints leads to silent data corruption, dangling references, and non-deterministic transaction aborts.
-        </p>
-
-        <div class="rules-grid">
-          ${resolvedChapter.rulesAndConstraints
-            .map(
-              (r) => `
-            <div class="rule-card ${r.severity === 'critical' ? 'critical' : ''}">
-              <div class="rule-name">
-                ${r.severity === 'critical' ? '🚨 CRITICAL: ' : '⚖️ INVARIANT: '}
-                ${escapeHtml(r.name)}
-              </div>
-              <div class="rule-desc">${escapeHtml(r.rule)}</div>
-            </div>
-          `
-            )
-            .join('')}
-        </div>
-      </section>
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 8: COMMON PITFALLS, EDGE CASES & INTERVIEW TRAPS -->
-      <!-- ========================================================================= -->
-      <section class="module-section page-break">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-08</span>
-            <span>Common Pitfalls, Edge Cases & Interview Traps</span>
-          </div>
-          <span class="section-badge">Exam & Interview Mastery</span>
-        </div>
-
-        <p>
-          Top tier tech companies (Google, Meta, Amazon, Microsoft) and university examinations specifically design questions around boundary conditions. Review these common traps to avoid critical errors:
-        </p>
-
-        <div class="pitfall-box">
-          <div class="pitfall-title">
-            <span>⚠️</span>
-            <span>Trap 1: Three-Valued Logic and the NULL Equality Trap</span>
-          </div>
-          <div class="pitfall-text">
-            In SQL and relational systems, <code>NULL = NULL</code> does NOT evaluate to <code>TRUE</code>; it evaluates to <code>UNKNOWN</code>. A query like <code>WHERE status != 'Active'</code> will silently discard rows where <code>status IS NULL</code>! Always use explicit <code>IS NULL</code> or <code>COALESCE()</code> guards.
-          </div>
-        </div>
-
-        <div class="pitfall-box">
-          <div class="pitfall-title">
-            <span>⚠️</span>
-            <span>Trap 2: Accidental Cartesian Product (Cross Join) Explosion</span>
-          </div>
-          <div class="pitfall-text">
-            Joining two tables with $M$ and $N$ rows without an explicit matching condition produces $M \times N$ tuples. If table A has 10,000 rows and table B has 10,000 rows, an omitted join predicate will attempt to materialize 100,000,000 tuples, exhausting RAM and freezing production databases.
-          </div>
-        </div>
-
-        <div class="pitfall-box">
-          <div class="pitfall-title">
-            <span>⚠️</span>
-            <span>Trap 3: SARGability & Index Invalidation in WHERE Clauses</span>
-          </div>
-          <div class="pitfall-text">
-            Wrapping an indexed column inside a scalar function (e.g., <code>WHERE UPPER(username) = 'ADMIN'</code> or <code>WHERE YEAR(created_at) = 2026</code>) prevents the B+ Tree index from being used (Non-SARGable query), forcing an expensive full table scan. Rewrite as direct range predicates instead.
-          </div>
-        </div>
-
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 18px; margin-top: 18px;">
-          <strong style="color: #353B97; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
-            🎓 Tier-1 Industry Interview Strategy:
-          </strong>
-          <ul style="margin-left: 20px; margin-top: 10px; color: #334155; font-size: 12.5px; line-height: 1.6;">
-            ${resolvedChapter.interviewTips
-              .map(
-                (tip) => `
-              <li style="margin-bottom: 6px;">${escapeHtml(tip)}</li>
-            `
-              )
-              .join('')}
-          </ul>
-        </div>
-      </section>
-
-      <!-- ========================================================================= -->
-      <!-- MODULE 9: COMPREHENSIVE ACTIVE RECALL PRACTICE BATTERY -->
-      <!-- ========================================================================= -->
-      <section class="module-section page-break">
-        <div class="section-banner">
-          <div class="section-title">
-            <span class="section-num">M-09</span>
-            <span>Comprehensive Active Recall Practice Battery</span>
+            <span>Diagnostic Verification & Active Recall Questions</span>
           </div>
           <span class="section-badge">Assessment Battery</span>
         </div>
 
         <p>
-          Test your conceptual mastery with these high-yield verification questions. Each question includes a complete breakdown of why the correct answer is valid and why every distractor is incorrect.
+          Reinforce your conceptual model with the diagnostic questions evaluated during your session. Each question breaks down the verified correct response and clarifies why alternative choices represent common pitfalls:
         </p>
 
-        ${resolvedDiag.quickCheck
-          .map(
-            (q, idx) => `
+        ${resolvedDiag.quickCheck.map((q, idx) => `
           <div class="drill-card">
             <div class="drill-question">
               <strong>Question ${idx + 1}:</strong> ${escapeHtml(q.question)}
             </div>
 
             <div class="drill-options">
-              ${q.options
-                .map(
-                  (opt, i) => `
+              ${q.options.map((opt, i) => `
                 <div class="drill-option ${i === q.correctIndex ? 'correct' : ''}">
                   <strong>${String.fromCharCode(65 + i)}.</strong> ${escapeHtml(opt)}
-                  ${i === q.correctIndex ? ' <span style="color: #10B981; font-weight: 800;">✓ [Correct Answer]</span>' : ''}
+                  ${i === q.correctIndex ? ' <span style="color: #10B981; font-weight: 800;">✓ [Verified Correct]</span>' : ''}
                 </div>
-              `
-                )
-                .join('')}
+              `).join('')}
             </div>
 
             <div class="drill-explanation">
-              <strong>Pedagogical Explanation:</strong> ${escapeHtml(q.explanation)}
-              <div class="distractor-breakdown">
-                <strong>Distractor Analysis:</strong> Alternate options fail because they either violate formal relational invariants, misunderstand asymptotic complexities, or confuse physical disk storage details with logical relational abstractions.
-              </div>
+              <strong>Pedagogical Rationale:</strong> ${escapeHtml(q.explanation)}
             </div>
           </div>
-        `
-          )
-          .join('')}
+        `).join('')}
       </section>
+      ` : ''}
 
       <!-- ========================================================================= -->
-      <!-- MODULE 10: 60-SECOND REVISION CHEATSHEET & FORMULA CARD -->
+      <!-- MODULE 4: HIGH-YIELD REVISION CHEATSHEET & MEMORY ANCHORS -->
       <!-- ========================================================================= -->
       <section class="module-section">
         <div class="section-banner">
           <div class="section-title">
-            <span class="section-num">M-10</span>
-            <span>Rapid Revision Cheatsheet & Memory Anchors</span>
+            <span class="section-num">M-04</span>
+            <span>High-Yield Revision Anchors & Exam Takeaways</span>
           </div>
-          <span class="section-badge">Night-Before-Exam Summary</span>
+          <span class="section-badge">Memory Anchors</span>
         </div>
 
-        <p>Review these high-density memory anchors 15 minutes before your examination or technical interview:</p>
+        <p>Review these critical conceptual takeaways before technical interviews or academic examinations:</p>
 
         <div class="cheatsheet-grid">
-          <div class="cheat-card">
-            <div class="cheat-card-title">Relational Schema</div>
-            <div class="cheat-card-body">
-              The static design & structure: $R(A_1, A_2, ..., A_n)$. Intension. Rarely changes after deployment.
+          ${resolvedDiag.keyTakeaways.map((takeaway, idx) => `
+            <div class="cheat-card">
+              <div class="cheat-card-title">Anchor §${idx + 1}</div>
+              <div class="cheat-card-body">${escapeHtml(takeaway)}</div>
             </div>
-          </div>
-
-          <div class="cheat-card">
-            <div class="cheat-card-title">Relational Instance</div>
-            <div class="cheat-card-body">
-              The dynamic snapshot of data at time $t$: $r(R)$. Extension. Modifies with every INSERT/UPDATE/DELETE.
-            </div>
-          </div>
-
-          <div class="cheat-card">
-            <div class="cheat-card-title">Entity Integrity</div>
-            <div class="cheat-card-body">
-              Primary Key columns MUST contain UNIQUE, NOT-NULL atomic values. No ghost entities permitted.
-            </div>
-          </div>
-
-          <div class="cheat-card">
-            <div class="cheat-card-title">Referential Integrity</div>
-            <div class="cheat-card-body">
-              Foreign Key must either match an existing Primary Key in the parent relation or be completely NULL.
-            </div>
-          </div>
-
-          <div class="cheat-card">
-            <div class="cheat-card-title">Degree vs Cardinality</div>
-            <div class="cheat-card-body">
-              <strong>Degree:</strong> Total number of columns.<br/>
-              <strong>Cardinality:</strong> Total number of rows currently stored.
-            </div>
-          </div>
-
-          <div class="cheat-card">
-            <div class="cheat-card-title">Closure Property</div>
-            <div class="cheat-card-body">
-              Every operation on relations outputs a valid relation, enabling arbitrary query composition & nesting.
-            </div>
-          </div>
-        </div>
-
-        <div style="background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 14px; margin-top: 14px; font-size: 12.5px; color: #1E1B4B;">
-          <strong>💡 Memory Mnemonic (The Normalization Law):</strong><br/>
-          <em>"Every non-key attribute must provide a fact about the key, the whole key, and nothing but the key, so help me Codd."</em>
+          `).join('')}
         </div>
       </section>
 
@@ -1366,7 +1070,7 @@ export const generateStudyGuidePdfHtml = (
           <div class="seal-badge">M</div>
           <div class="seal-meta">
             <h4>MetaMind Academic Verification Council</h4>
-            <p>Verified Student Revision Material • Syllabus Aligned: 2026 Academic Standard</p>
+            <p>Verified Student Revision Material • Adaptive AI Calibration</p>
             <p style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748B; margin-top: 3px;">
               Digital Hash: SHA256-${Math.random().toString(36).substring(2, 14).toUpperCase()}
             </p>
@@ -1376,7 +1080,7 @@ export const generateStudyGuidePdfHtml = (
         <div class="seal-signature">
           <div class="sig-line"></div>
           <div>Academic Director, MetaMind AI</div>
-          <div style="color: #94A3B8; font-size: 10px;">Authenticated Computer Science Syllabus</div>
+          <div style="color: #94A3B8; font-size: 10px;">Personalized for ${escapeHtml(userName)}</div>
         </div>
       </div>
 
@@ -1401,12 +1105,13 @@ export const downloadStudyGuidePdf = (
   topic: string,
   diagnostic?: CognitiveDiagnostic,
   userName: string = 'Scholar',
-  chapterData?: ChapterContent
+  chapterData?: ChapterContent,
+  realExplanation?: string
 ) => {
   const windowPrint = window.open('', '_blank');
   if (!windowPrint) return;
 
-  const html = generateStudyGuidePdfHtml(topic, diagnostic, userName, chapterData);
+  const html = generateStudyGuidePdfHtml(topic, diagnostic, userName, chapterData, realExplanation);
   windowPrint.document.open();
   windowPrint.document.write(html);
   windowPrint.document.close();

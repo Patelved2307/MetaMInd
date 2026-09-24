@@ -284,6 +284,8 @@ export const ChatbotWorkspacePage: React.FC = () => {
 
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<{ [msgId_qId: string]: number }>({});
+  const [quizConfidence, setQuizConfidence] = useState<{ [msgId: string]: 'low' | 'medium' | 'high' }>({});
+  const [isCalibratingMsgId, setIsCalibratingMsgId] = useState<string | null>(null);
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [inputMessage, setInputMessage] = useState('');
@@ -648,7 +650,7 @@ export const ChatbotWorkspacePage: React.FC = () => {
   };
 
   // Send Message with Attachments & Active Plugins
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const promptText = (textToSend !== undefined ? textToSend : inputMessage).trim();
     if ((!promptText && currentAttachments.length === 0) || !activeSession || isAiThinking) return;
 
@@ -679,9 +681,9 @@ export const ChatbotWorkspacePage: React.FC = () => {
     setCurrentAttachments([]);
     setIsAiThinking(true);
 
-    setTimeout(() => {
+    try {
       const activeEnabledPlugins = installedPlugins.filter((p) => p.isEnabled).map((p) => p.id);
-      const { content, diagnostic } = chatService.generateCognitiveResponse(
+      const { content, diagnostic } = await chatService.generateCognitiveResponseAsync(
         promptText || 'Please analyze the attached document.',
         activePlugin,
         activeEnabledPlugins,
@@ -697,8 +699,17 @@ export const ChatbotWorkspacePage: React.FC = () => {
       };
 
       const finalMessages = [...updatedMessages, aiMessage];
+      const sessionTopic = diagnostic?.topic;
       const finalSession = {
         ...sessionWithUser,
+        title:
+          (sessionWithUser.title === 'New Discussion' ||
+            sessionWithUser.title === 'Welcome to MetaMind AI' ||
+            sessionWithUser.title === 'Academic Chat' ||
+            activeSession.messages.length <= 1) &&
+          sessionTopic
+            ? sessionTopic
+            : sessionWithUser.title,
         messages: finalMessages,
         updatedAt: new Date().toISOString(),
       };
@@ -706,8 +717,11 @@ export const ChatbotWorkspacePage: React.FC = () => {
       const allSessions = updatedSessions.map((s) => (s.id === activeSession.id ? finalSession : s));
       setSessions(allSessions);
       chatService.saveSessions(allSessions);
+    } catch (err) {
+      console.error('AI generation error:', err);
+    } finally {
       setIsAiThinking(false);
-    }, 800);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -723,6 +737,129 @@ export const ChatbotWorkspacePage: React.FC = () => {
       [`${msgId}_${qId}`]: optIndex,
     };
     setQuizAnswers(newAnswers);
+  };
+
+  // Generate Tailored Explanation based on Diagnostic Quiz & Confidence
+  const handleGenerateCalibratedExplanation = async (diagnosticMsg: ChatMessage) => {
+    if (!diagnosticMsg.diagnostic || !activeSession || isCalibratingMsgId) return;
+
+    const diag = diagnosticMsg.diagnostic;
+    const confidence = quizConfidence[diagnosticMsg.id] || 'medium';
+    setIsCalibratingMsgId(diagnosticMsg.id);
+
+    try {
+      // Find original student doubt prompt
+      const msgIndex = activeSession.messages.findIndex((m) => m.id === diagnosticMsg.id);
+      const userPromptMsg = msgIndex > 0 ? activeSession.messages[msgIndex - 1] : null;
+      const originalQuery = userPromptMsg?.content || diag.topic || activeSession.title;
+
+      // Extract user choices
+      const userQuestionAnswers = diag.quickCheck.map((q) => {
+        const chosenIdx = quizAnswers[`${diagnosticMsg.id}_${q.id}`];
+        return {
+          question: q.question,
+          correctAnswer: q.options[q.correctIndex] || '',
+          userAnswer: chosenIdx !== undefined ? q.options[chosenIdx] : 'Unanswered',
+          isCorrect: chosenIdx === q.correctIndex,
+        };
+      });
+
+      const primaryQ = userQuestionAnswers[0] || {
+        question: `Understanding ${diag.topic}`,
+        correctAnswer: 'Core Principles',
+        userAnswer: 'Reviewed questions',
+      };
+
+      const res = await fetch('http://localhost:3001/api/ai/evaluate-and-explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: originalQuery,
+          question: {
+            question: primaryQ.question,
+            correctAnswer: primaryQ.correctAnswer,
+          },
+          userAnswer: primaryQ.userAnswer,
+          confidence,
+        }),
+      });
+
+      let evalData: any;
+      if (res.ok) {
+        evalData = await res.json();
+      } else {
+        const correctCount = userQuestionAnswers.filter((a) => a.isCorrect).length;
+        const totalCount = userQuestionAnswers.length || 1;
+        const scorePercent = (correctCount / totalCount) * 100;
+        evalData = {
+          masteryLevel: scorePercent >= 100 ? 'COMPETENT' : scorePercent > 0 ? 'DEVELOPING' : 'NEEDS_FOUNDATION',
+          misconception: scorePercent < 100 ? 'Clarify the distinction between foundational instructions and high-level syntax.' : null,
+          tailoredExplanation: `Here is a detailed breakdown of **${diag.topic}** calibrated to your baseline knowledge.`,
+          keyTakeaway: 'Always verify prerequisite mental models before diving into advanced code.',
+        };
+      }
+
+      const masteryTitle = (evalData.masteryLevel || 'DEVELOPING').replace('_', ' ');
+
+      const direct = evalData.directAnswer || evalData.tailoredExplanation || `Here is a comprehensive breakdown of **${diag.topic}**.`;
+      const mechanicsSection = evalData.underlyingMechanics
+        ? `\n\n#### ⚙️ Under-the-Hood Mechanics\n${evalData.underlyingMechanics}`
+        : '';
+      const relatedSection = evalData.relatedConcepts
+        ? `\n\n#### 🌐 Surrounding Concepts & Big Picture\n${evalData.relatedConcepts}`
+        : '';
+      const codeSection = evalData.codeExample
+        ? `\n\n#### 💻 Practical Example & Architecture\n${evalData.codeExample}`
+        : '';
+      const nextStepSection = evalData.nextStep
+        ? `\n\n> 🗺️ **Recommended Next Step**: ${evalData.nextStep}`
+        : '';
+
+      const explanationContent = `### 🎯 Calibrated Explanation: ${masteryTitle}
+*Adapted to your diagnostic quiz responses and **${confidence.toUpperCase()}** confidence level*
+
+${evalData.misconception ? `> 💡 **Cognitive Gap Identified**: ${evalData.misconception}\n\n` : ''}
+
+${direct}
+${mechanicsSection}
+${relatedSection}
+${codeSection}
+${nextStepSection}
+
+---
+
+**📌 Core Takeaway**: ${evalData.keyTakeaway || 'Master prerequisite concepts to solidify understanding.'}`;
+
+      const aiExplanationMsg: ChatMessage = {
+        id: `msg_ai_exp_${Date.now()}`,
+        sender: 'assistant',
+        content: explanationContent,
+        diagnostic: {
+          ...diag,
+          weakness: evalData.misconception || diag.weakness,
+          keyTakeaways: evalData.keyTakeaway
+            ? [evalData.keyTakeaway, ...(diag.keyTakeaways || [])]
+            : diag.keyTakeaways,
+          isExplanation: true,
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const updatedMessages = [...activeSession.messages, aiExplanationMsg];
+      const updatedSession = {
+        ...activeSession,
+        messages: updatedMessages,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const allSessions = sessions.map((s) => (s.id === activeSession.id ? updatedSession : s));
+      setSessions(allSessions);
+      chatService.saveSessions(allSessions);
+    } catch (err) {
+      console.error('Failed to generate calibrated explanation:', err);
+    } finally {
+      setIsCalibratingMsgId(null);
+    }
   };
 
   // Group sessions by Pinned, Today, Yesterday, Older
@@ -1479,8 +1616,12 @@ export const ChatbotWorkspacePage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Cognitive Diagnostic Card */}
-                      {!isUser && message.diagnostic && (
+                      {/* Cognitive Diagnostic Card (only renders if message has diagnostic questions) */}
+                      {!isUser &&
+                        message.diagnostic &&
+                        !message.diagnostic.isExplanation &&
+                        message.diagnostic.quickCheck &&
+                        message.diagnostic.quickCheck.length > 0 && (
                         <div className="ai-diagnostic p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3 shadow-2xs will-change-transform">
                           <div className="flex items-center justify-between border-b border-indigo-100/80 pb-2">
                             <div className="flex items-center gap-2">
@@ -1538,6 +1679,68 @@ export const ChatbotWorkspacePage: React.FC = () => {
                               </div>
                             );
                           })}
+
+                          {/* Interactive Confidence Meter & Calibrate Button (Always visible on diagnostic cards) */}
+                          {message.diagnostic.quickCheck.length > 0 && (
+                            <div className="mt-4 pt-3 border-t border-indigo-100/90 space-y-3 bg-white/90 p-3.5 rounded-xl border border-indigo-100 shadow-2xs">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                    Confidence Meter
+                                  </span>
+                                  <p className="text-[11px] text-slate-500">
+                                    How confident do you feel in this concept? (Select to calibrate depth)
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  {[
+                                    { id: 'low', label: '🔴 Low' },
+                                    { id: 'medium', label: '🟡 Moderate' },
+                                    { id: 'high', label: '🟢 High' },
+                                  ].map((lvl) => {
+                                    const isSelected =
+                                      (quizConfidence[message.id] || 'medium') === lvl.id;
+                                    return (
+                                      <button
+                                        key={lvl.id}
+                                        type="button"
+                                        onClick={() =>
+                                          setQuizConfidence((prev) => ({
+                                            ...prev,
+                                            [message.id]: lvl.id as any,
+                                          }))
+                                        }
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                                          isSelected
+                                            ? 'bg-indigo-600 text-white shadow-2xs'
+                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                        }`}
+                                      >
+                                        {lvl.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                disabled={isCalibratingMsgId === message.id}
+                                onClick={() => handleGenerateCalibratedExplanation(message)}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-70"
+                              >
+                                {isCalibratingMsgId === message.id ? (
+                                  <span>Llama 3.1 is Calibrating Explanation...</span>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4 text-amber-300" />
+                                    <span>✨ Calibrate & Deepen My Explanation</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1546,13 +1749,42 @@ export const ChatbotWorkspacePage: React.FC = () => {
                         <div className="ai-actions mt-3 pt-2 border-t border-slate-100 flex justify-end will-change-transform">
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              const isExp = message.diagnostic?.isExplanation;
+                              let realExp = isExp ? message.content : undefined;
+                              let diagToUse = { ...message.diagnostic! };
+
+                              if (!isExp) {
+                                const subsequentExp = activeSession?.messages?.find(
+                                  (m) => m.sender === 'assistant' && m.diagnostic?.isExplanation
+                                );
+                                if (subsequentExp) {
+                                  realExp = subsequentExp.content;
+                                }
+                              } else {
+                                if (!diagToUse.quickCheck || diagToUse.quickCheck.length === 0) {
+                                  const turn1Msg = activeSession?.messages?.find(
+                                    (m) => m.sender === 'assistant' && !m.diagnostic?.isExplanation && m.diagnostic?.quickCheck?.length
+                                  );
+                                  if (turn1Msg?.diagnostic?.quickCheck?.length) {
+                                    diagToUse.quickCheck = turn1Msg.diagnostic.quickCheck;
+                                  }
+                                }
+                              }
+
+                              const resolvedTitle =
+                                diagToUse.topic ||
+                                (activeSession?.title && activeSession.title !== 'Welcome to MetaMind AI' ? activeSession.title : '') ||
+                                'Academic Doubt';
+
                               downloadStudyGuidePdf(
-                                activeSession?.title || 'Academic Topic',
-                                message.diagnostic!,
-                                registeredName
-                              )
-                            }
+                                resolvedTitle,
+                                diagToUse,
+                                registeredName,
+                                undefined,
+                                realExp
+                              );
+                            }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                           >
                             <FileDown className="w-3.5 h-3.5 text-indigo-600" />
