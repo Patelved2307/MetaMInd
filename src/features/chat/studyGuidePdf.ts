@@ -1,5 +1,5 @@
 import type { CognitiveDiagnostic } from './chat.types';
-import { type ChapterContent, CHAPTER_CONTENT_REGISTRY, getChapterContent } from '@/data/chaptersContentData';
+import type { ChapterContent } from '@/data/chaptersContentData';
 
 // Helper to escape HTML characters
 const escapeHtml = (str: string): string => {
